@@ -38,6 +38,7 @@ The detail pages use hash routes, so changing the URL doesn't reload the page. F
 | Column | Contents |
 | --- | --- |
 | `Bill Number` | 6-digit CampusLabs request number |
+| `Organization` | Student organization that submitted the bill, taken from the list row or the detail page. Blank, with a warning, if it can't be found |
 | `Q1: …` to `Qn: …` | One column per Additional Information question, with the question text in the header |
 | `Requested Total` | Requested total from the Budget tab |
 | `Reviewer Adjusted Total` | Reviewer adjusted total from the Budget tab |

@@ -59,6 +59,62 @@
     }
 
     // ============================================================
+    // 1b. ORGANIZATION NAMES
+    // ============================================================
+    // Engage links organization names to /engage/organization/<slug>.
+    // Links inside the site header/nav (e.g. "My Organizations") are
+    // ignored. If no link is found, fall back to a line labeled
+    // "Organization" in the page text.
+
+    const NAV_SELECTOR = "nav, header, [role='navigation'], [role='banner']";
+
+    function orgLinks(root) {
+        return [...root.querySelectorAll("a[href*='/organization/']")]
+            .filter(a => !a.closest(NAV_SELECTOR))
+            .map(a => a.innerText.trim())
+            .filter(Boolean);
+    }
+
+    function orgFromLabel(text) {
+        const lines = toLines(text);
+        for (let i = 0; i < lines.length; i++) {
+            const m = lines[i].match(/^(?:organization|organization name)\s*:?\s*(.*)$/i);
+            if (m) return m[1].trim() || lines[i + 1] || "";
+        }
+        return "";
+    }
+
+    // Org name from the bill's row on the list page: walk up from the
+    // "No. 123456" text until a container holds an org link, stopping
+    // before the container grows to include another bill.
+    function orgFromListRow(bill) {
+        const re = new RegExp(`(?<!\\d)${bill}(?!\\d)`);
+        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+        let node;
+        while ((node = walker.nextNode())) {
+            if (!re.test(node.textContent)) continue;
+            for (let el = node.parentElement; el && el !== document.body; el = el.parentElement) {
+                const bills = el.innerText.match(/No\.\s*\d{6}(?!\d)/gi) || [];
+                if (new Set(bills.map(b => b.replace(/\D/g, ""))).size > 1) break;
+                const links = orgLinks(el);
+                if (links.length) return links[0];
+            }
+        }
+        return "";
+    }
+
+    function orgFromDetail(win) {
+        try {
+            const doc = win.document;
+            return orgLinks(doc.body)[0] || orgFromLabel(doc.body.innerText);
+        } catch {
+            return "";
+        }
+    }
+
+    const listOrgs = Object.fromEntries(billNumbers.map(b => [b, orgFromListRow(b)]));
+
+    // ============================================================
     // 2. DETAIL WINDOW
     // ============================================================
 
@@ -208,6 +264,7 @@
 
         const rec = {
             bill,
+            org: listOrgs[bill] || "",
             blocks: {},
             history: "",
             requestedTotal: "",
@@ -225,12 +282,15 @@
             const { body, history } = splitSections(info.text);
             rec.blocks = parseQuestionBlocks(body);
             rec.history = history.join(" | ");
+            if (!rec.org) rec.org = orgFromDetail(detailWindow);
 
             const budget = await loadPage(DETAIL_BASE + bill + TAB_BUDGET, isBudgetReady);
             if (!budget.ready) {
                 rec.warnings.push("Budget tab timed out; totals may be missing or from previous bill");
             }
             Object.assign(rec, parseBudgetTotals(budget.text));
+            if (!rec.org) rec.org = orgFromDetail(detailWindow);
+            if (!rec.org) rec.warnings.push("Organization name not found");
 
             console.log(rec.warnings.length ? `  ⚠ ${rec.warnings.join("; ")}` : "  ✓ done");
         } catch (err) {
@@ -297,6 +357,7 @@
 
     const headers = [
         "Bill Number",
+        "Organization",
         ...questionHeaders,
         "Requested Total",
         "Reviewer Adjusted Total",
@@ -306,7 +367,7 @@
     ];
 
     const results = raw.map(r => {
-        const row = { "Bill Number": r.bill };
+        const row = { "Bill Number": r.bill, "Organization": r.org };
         for (let n = 1; n <= maxQ; n++) {
             const block = r.blocks[n] || [];
             row[questionHeaders[n - 1]] = block
