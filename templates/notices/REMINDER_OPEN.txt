@@ -1,0 +1,14 @@
+Hi {submitter_name},
+
+Our records show that {rso}'s event for Bill {bill_id} ("{title}") took place on {event_date}.
+Under SAF Policy §9.5.1, a Post-Event Recap Form is due within 14 calendar days of the event:
+by 11:59 PM on {due_date}.
+
+The form needs: the bill/budget number, event date and location, number of attendees
+(GT and non-GT), and proof of attendance. If one event used several bills, list every bill
+number, comma-separated, on one form (§9.5.3).
+
+If the event was cancelled or the funds were not used, please still submit the form and
+say so. This keeps your record complete and no strike applies.
+
+Joint Finance Committee

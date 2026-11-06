@@ -1,0 +1,23 @@
+key: engage_line_items
+label: Engage request export (one row per line item)
+kind: table
+match: exact
+encodings: [utf-8-sig, cp1252]   # real export is Windows-1252
+fingerprint: [Id, ProcessName, SubmittedOnBehalfOf, Status, RequestedAmount, LineItemName]
+columns:
+  bill_id: Id
+  process: ProcessName
+  title: Title
+  submitter_name: SubmitterName
+  submitter_email: SubmitterEmail
+  first_submitted: FirstSubmitted
+  last_submitted: LastSubmitted
+  rso: SubmittedOnBehalfOf
+  status: Status
+  step: CurrentStepName
+  requested: RequestedAmount
+  adjusted: AdjustedAmount
+  budget_name: BudgetName
+  section: SectionName
+  line_item: LineItemName
+datetime_format: "%m/%d/%Y %H:%M"

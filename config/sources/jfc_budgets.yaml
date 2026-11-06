@@ -1,0 +1,12 @@
+key: jfc_budgets
+label: JFC data sheet - FY Final Budgets (per-RSO totals)
+kind: table
+match: exact
+encodings: [utf-8-sig, cp1252]
+fingerprint: ["RSO Name", "Budget Requested", "Budget Allocated"]
+columns:
+  rso: "RSO Name"
+  requested: "Budget Requested"
+  allocated: "Budget Allocated"
+# TODO (open item B2/B3): the budget-event tab of the JFC data sheet carries the
+# 5-digit budget IDs RSOs put on recaps, plus event dates. Add it as its own source.

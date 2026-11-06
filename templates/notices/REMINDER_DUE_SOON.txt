@@ -1,0 +1,9 @@
+Hi {submitter_name},
+
+Reminder: the Post-Event Recap Form for Bill {bill_id} ("{title}", {rso}) is due in
+{days_left} day(s), by 11:59 PM on {due_date} (SAF Policy §9.5.1).
+
+Missing the deadline results in a strike under §9.5.2. A first strike makes {rso} ineligible
+for Supplemental Bills review until the form is submitted.
+
+Joint Finance Committee

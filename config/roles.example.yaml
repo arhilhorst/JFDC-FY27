@@ -1,0 +1,15 @@
+# COPY THIS FILE TO <data dir>/roles.yaml (the SharePoint folder only the Chair
+# and the Matching lead can write to). The CLI reads roles from the DATA DIR,
+# not from the repo, so nobody can grant themselves access by editing a checkout.
+#
+# Chair decision C9: exact permissions.
+#   admin     - everything (Chair)
+#   reviewer  - link/alias/exemption/override decisions; enters strike confirmations
+#   confirmer - the people whose sign-off makes a strike count (Walker + named JFC members)
+#   operator  - everyone else: ingest, run, draft reports. No ledger writes.
+admin:
+  - chair@gatech.edu          # TODO: Annarose's GT email
+reviewer:
+  - matching.lead@gatech.edu  # TODO
+confirmer:
+  - jvpf@gatech.edu           # TODO: Walker Bailey

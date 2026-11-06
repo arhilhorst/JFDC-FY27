@@ -1,0 +1,8 @@
+Hi {submitter_name},
+
+We received {rso}'s Post-Event Recap for Bill {bill_id} ("{title}"), but it is missing
+information required by SAF Policy §9.5.1: {notes}.
+
+Please submit a corrected form. The deadline is 11:59 PM on {due_date}.
+
+Joint Finance Committee

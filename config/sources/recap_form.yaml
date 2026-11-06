@@ -1,0 +1,25 @@
+key: recap_form
+label: Post-Event Recap Form responses (Microsoft Forms Excel)
+kind: table
+match: prefix          # Form headers are long questions; match on the start
+encodings: [utf-8-sig, cp1252]
+fingerprint: ["please select your rso", "bill/budget number", "proof of attendance"]
+columns:
+  response_id: "id"
+  started_at: "start time"
+  submitted_at: "completion time"
+  respondent_email: "email"
+  respondent_name: "name"
+  rso: "please select your rso"
+  event_name: "name of event"
+  bill_text: "bill/budget number"
+  date_location: "event date and location"
+  attendees_text: "number of attendees"
+  proof: "proof of attendance"
+  summary: "event summary"
+optional_columns:
+  # PENDING FORM CHANGE - see docs/PENDING_CHANGES.md (PC-1, PC-2).
+  # Until these questions exist the engine assumes funds were used and
+  # infers attendance tracking from the attendee count.
+  funds_used: "did you use the funds"
+  attendance_tracked: "did you track attendance"

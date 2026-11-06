@@ -1,0 +1,31 @@
+key: bill_details
+label: Bill details - campuslabs-scraper.js CSV / JFC Data Sheet "CampusLabs_Budget_Requests" tab, or bill PDF
+kind: table
+# Headers look like "Q8: For Events Only: Please state when your event is ...". Match on the question
+# text (not the Q-number) so a renumbered form still works.
+match: contains
+encodings: [utf-8-sig, cp1252]
+fingerprint: ["bill number", "please state when your event is"]
+columns:
+  bill_id: "bill number"
+  event_date_text: "please state when your event is"
+optional_columns:
+  is_event_text: "is this request intended to be used with an event"
+  attestation_text: "have you submitted post-event recap forms for all events"
+  expected_attendance_text: "please specify the expected number of attendees"
+  engage_event_link: "paste the link to the engage event"
+  purchased_prior: "has your rso already purchased"
+  requested_total: "requested total"
+  adjusted_total: "reviewer adjusted total"
+  rso: "organization"               # added by the scraper on 10/20
+  scraper_warning: "warnings"       # tab timed out: row may hold the previous bill's data
+  scraper_error: "error"
+
+# The same questions in an exported bill PDF (whitespace-insensitive: PDF text drops spaces).
+pdf_questions:
+  is_event: "isthisrequestintendedtobeusedwithanevent"
+  attestation: "haveyousubmittedpost-eventrecapformsforall"
+  event_date_text: "pleasestatewhenyoureventis"
+  expected_attendance_text: "pleasespecifytheexpectednumberofattendees"
+  engage_event_link: "pleasepastethelinktotheengageevent"
+  purchased_prior: "hasyourrsoalreadypurchased"
