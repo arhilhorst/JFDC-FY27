@@ -1,0 +1,12 @@
+# Real data NEVER goes in git (student PII, financial records). See docs/ARCHITECTURE.md §8.
+data/
+*.csv
+*.xlsx
+*.xls
+*.pdf
+!tests/fixtures/**
+__pycache__/
+*.egg-info/
+.venv/
+.pytest_cache/
+.ruff_cache/

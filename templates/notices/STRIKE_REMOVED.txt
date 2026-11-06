@@ -1,0 +1,6 @@
+Hi {submitter_name},
+
+After review, the strike for Bill {bill_id} ("{title}", {rso}) has been removed.
+No action is needed.
+
+Joint Finance Committee

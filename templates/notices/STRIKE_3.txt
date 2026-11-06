@@ -1,0 +1,18 @@
+Hi {submitter_name},
+
+This is formal notice under SAF Policy §9.5.2 that {rso} has received Strike 3 this
+fiscal year.
+
+  Bill:        {bill_id} ("{title}")
+  Event date:  {event_date}
+  Recap due:   {due_date}
+  Recap filed: {recap_submitted_at}
+  Status:      {status}
+
+Consequence: {consequence}.
+
+If you have not yet submitted the Post-Event Recap Form, please do so now. If you believe this
+strike is in error (for example, the event was cancelled, the funds were not used, or the bill
+covered the same event as another bill), reply to this email and JFC will review it.
+
+Joint Finance Committee

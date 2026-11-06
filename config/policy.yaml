@@ -1,0 +1,54 @@
+# SAF Policy parameters (Joint Policy of the SAF, rev. 9/29/2026).
+# Change numbers HERE, not in code. Every value cites its section.
+
+timezone: America/New_York   # all source timestamps are Eastern wall-clock time (confirmed by Chair)
+
+fiscal_year:
+  start_month: 7          # FY runs July 1 - June 30 (Key Terms)
+  start_day: 1
+
+recap:
+  due_days: 14            # §9.5.1 - within 14 calendar days of the event
+  clock_starts: last_day  # Chair decision C3 - last day of a multi-day event
+  due_soon_days: 3        # reminder band (Chair decision C1)
+
+strikes:
+  # §9.5.2 consequences by confirmed strike number
+  strike2_freeze_days_after_submission: 30
+  # Chair decision B4: one strike PER BILL; an RSO may later walk back
+  # same-event duplicates through a confirmed `strike_remove` decision.
+  unit: bill
+
+# Which Engage processes are in scope, per fiscal year.
+# Anything else in the export (GTSF, Parents Fund, MOVE, ANAK, ...) is ignored.
+scope:
+  27:
+    bill_processes: ["SGA Bills Process FY27"]
+    budget_processes: ["SGA FY27 Budget Request"]
+
+statuses:
+  funded: ["Approved"]
+  not_funded: ["Rejected", "ReturnedForRevision", "Submitted", "Resubmitted"]
+
+# Sections whose line items mean "this bill funds an event" when the bill
+# details page answer is not available (Section A = events).
+event_section_prefixes: ["A0"]
+
+matching:
+  fallback_date_window_days: 3   # org + event date fallback (charter matching rule 2)
+  fuzzy_org_min_score: 88        # suggestion only - never auto-applied
+
+freshness:
+  recap_max_age_hours: 24        # BLOCKS the run: stale recaps => false strikes
+  engage_max_age_days: 4         # warn (Mon/Wed cadence)
+  bill_details_max_age_hours: 72 # warn
+  newest_record_gap_days: 3      # warn if newest row in a file is this much older than its as-of
+
+flags:
+  bills_cap:
+    enabled: true
+    # JFC operates on $40,000 (JFC Data Sheet "Bills Cap Tracker" + Engage form B11 text);
+    # SAF Policy §9.6 rev. 9/29/2026 says $45,000. Open item O4: confirm and fix whichever is wrong.
+    cents: 4000000
+  attestation:
+    enabled: true                # RSO answered "Yes, all recaps submitted" while one was overdue

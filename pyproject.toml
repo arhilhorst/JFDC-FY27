@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jfdc"
+version = "0.1.0"
+description = "JFDC SAF compliance engine: ingest Engage/recap uploads, match recaps to bills, apply SAF Policy §9.5"
+requires-python = ">=3.11"
+dependencies = [
+  "pandas>=2.1",
+  "openpyxl>=3.1",
+  "pyyaml>=6",
+  "pypdf>=4",
+  "rapidfuzz>=3",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.5"]
+
+[project.scripts]
+jfdc = "jfdc.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["E501"]
