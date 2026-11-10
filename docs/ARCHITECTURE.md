@@ -341,7 +341,7 @@ erDiagram
 |---|---|---|
 | Language | Python 3.12 | The scraper and most student skills are already Python; strong spreadsheet tooling |
 | Data handling | pandas + openpyxl / xlrd; `pydantic` for row schemas | Reads every format Engage and Forms produce; validated, typed rows |
-| Storage (Phase 1) | **Files in the data dir**: `raw/` (immutable uploads), `manifest.jsonl`, `ledger/decisions.jsonl`, `runs/` | Works in a SharePoint-synced folder, where a SQLite file would corrupt under sync. Derived state is rebuilt each run anyway. Phase 2 moves to Postgres when hosted. |
+| Storage (Phase 1) | **Files in the data dir**: `raw/` (immutable uploads), `manifest/`, `ledger/decisions/`, `notices_sent/` (one JSON file per entry, sync-safe), `runs/` | Works in a SharePoint-synced folder, where a SQLite file would corrupt under sync. Derived state is rebuilt each run anyway. Phase 2 moves to Postgres when hosted. |
 | Fuzzy matching | `rapidfuzz` | Org-name suggestions only, never auto-applied |
 | Config | YAML (`policy.yaml`, `sources/*.yaml`) | Non-developers can change thresholds and column maps |
 | Interface, Phase 1 | argparse CLI | `jfdc init / ingest / status / run / decide / import-confirmations / mark-sent` |

@@ -392,3 +392,39 @@ def test_onedrive_conflict_copy_blocks_writes_and_runs(world):
         rerun(world, datetime(2026, 9, 20))
     with pytest.raises(SyncConflictError):
         record_decision(world.ws, world.cfg, "strike_confirm", REVIEWER, bill_id="100440", confirmed_by=CONFIRMER)
+
+
+# Sync-safe store: one file per entry
+def test_store_writes_one_file_per_entry_and_ids_are_unique(world):
+    world.bill(100500, event_date=EV)
+    world.write_and_run(datetime(2026, 9, 20))
+    for b in ("100500", "100500"):
+        record_decision(world.ws, world.cfg, "strike_confirm", REVIEWER, bill_id=b, confirmed_by=CONFIRMER)
+    ws = world.ws
+    assert len(list(ws.ledger_dir.glob("*.json"))) == 2
+    assert not ws.legacy_ledger.exists() and not ws.legacy_manifest.exists()
+    ids = [u.upload_id for u in ws.uploads()]
+    assert len(ids) == len(set(ids)) and len(list(ws.manifest_dir.glob("*.json"))) == len(ids)
+
+
+def test_legacy_jsonl_logs_are_still_read_first(world):
+    import json
+    world.bill(100510, event_date=EV)
+    world.write_and_run(datetime(2026, 9, 20))
+    ws = world.ws
+    legacy = {"id": "legacy1", "type": "strike_confirm", "actor": REVIEWER, "at": "2026-09-01T00:00:00",
+              "reason": "", "bill_id": "100510", "confirmed_by": CONFIRMER}
+    ws.legacy_ledger.write_text(json.dumps(legacy) + "\n")
+    record_decision(world.ws, world.cfg, "strike_waive", REVIEWER, reason="appeal", bill_id="100510",
+                    confirmed_by=CONFIRMER)
+    assert [d["type"] for d in ws.decisions()] == ["strike_confirm", "strike_waive"]
+    assert strikes_for(rerun(world, datetime(2026, 9, 20)), 100510).iloc[0]["state"] == "waived"
+
+
+def test_half_synced_entry_blocks_instead_of_being_skipped(world):
+    from jfdc.workspace import SyncConflictError
+    world.bill(100520, event_date=EV)
+    world.write_and_run(datetime(2026, 9, 20))
+    (world.ws.ledger_dir / "20260920T000000000000Z_deadbeef.json").write_text('{"id": "x", "ty')
+    with pytest.raises(SyncConflictError, match="still be syncing"):
+        rerun(world, datetime(2026, 9, 20))

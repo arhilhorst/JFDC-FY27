@@ -9,11 +9,18 @@ decisions also need a `confirmer`'s sign-off.
    lead have write access to `roles.yaml` and `ledger/` in that folder.
 3. The Chair copies `config/roles.example.yaml` to `<data dir>/roles.yaml` and fills in GT emails.
 
-### OneDrive / SharePoint sync conflicts
-If two people write to the data folder at once, OneDrive can create a conflict copy such as
-`ledger/decisions-LAPTOP.jsonl` or `manifest (1).jsonl`. `jfdc` then **refuses** to ingest, decide, mark notices sent or run
-(exit code 3), because the copy may hold decisions the real file doesn't. To fix it, append the copy's lines to the
-real file, dropping lines that already appear there, then delete the copy. Keep the data folder set to **"Always keep on this device"**.
+### OneDrive / SharePoint sync
+Every upload, decision and sent notice is written as **its own new file** (`manifest/`, `ledger/decisions/`,
+`notices_sent/`). Files are never edited, so several people can ingest or decide on different machines at once
+and sync never has to merge anything. Keep the data folder set to **"Always keep on this device"**.
+
+- If an entry file is unreadable (usually because it's still syncing), `jfdc` stops with "may still be syncing" (exit code 3).
+  Wait for OneDrive to finish and re-run.
+- Older data folders may still have `manifest.jsonl` / `ledger/decisions.jsonl` / `notices_sent.jsonl`. They're read
+  first and never written again. If OneDrive left a conflict copy of one of them (`decisions-LAPTOP.jsonl`),
+  `jfdc` refuses to run until you append the copy's lines to the real file, dropping lines already there, and delete the copy.
+- A decision recorded on a machine that hasn't synced yet only shows up in runs after it syncs. Run from one
+  designated machine and check its OneDrive icon shows "up to date" first.
 
 ## 1. Pull the data
 | What | Where | Cadence |
