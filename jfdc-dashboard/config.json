@@ -1,0 +1,185 @@
+{
+  "_comment": "Edit this file to point the dashboard at your data and to map spreadsheet columns. Paths are relative to this folder unless absolute. Environment variables RECAP_SOURCE and BILLS_SOURCE override the 'path' values.",
+  "recap_source": {
+    "type": "file",
+    "path": "sample_data/recap_responses_sample.xlsx",
+    "sheet": null
+  },
+  "bills_source": {
+    "type": "file",
+    "path": "sample_data/bills_sample.xlsx",
+    "sheet": null,
+    "history_fiscal_years": 2,
+    "_comment": "Point 'path' at Walker's JFC Data Sheet .xlsx (it is detected automatically and its Data Pasting Site / CampusLabs_Budget_Requests / Bill Queue tabs are combined), or at any one-row-per-bill sheet."
+  },
+  "adjustments_source": {
+    "type": "file",
+    "path": "sample_data/strike_adjustments.csv"
+  },
+  "recap_columns": {
+    "_comment": "Each field lists header names to look for (case-insensitive, 'starts with' match). These match the Microsoft Forms export of the Post-Event Recap Form.",
+    "response_id": [
+      "ID"
+    ],
+    "submitted_at": [
+      "Completion time",
+      "Completion Time"
+    ],
+    "email": [
+      "Email"
+    ],
+    "name": [
+      "Name"
+    ],
+    "rso": [
+      "Please select your RSO",
+      "RSO",
+      "Organization"
+    ],
+    "event_name": [
+      "Name of Event",
+      "Event Name"
+    ],
+    "bill_numbers": [
+      "Bill/Budget Number",
+      "Bill Number",
+      "Budget Number"
+    ],
+    "event_date_location": [
+      "Event Date and Location",
+      "Event Date"
+    ],
+    "attendees": [
+      "Number of Attendees",
+      "Attendees"
+    ],
+    "proof": [
+      "Proof of Attendance"
+    ],
+    "summary": [
+      "Event Summary and Fund Usage Recap",
+      "Event Summary"
+    ]
+  },
+  "bill_columns": {
+    "_comment": "Map your master bills sheet / Engage export. Only bill_number and rso are required; the rest make the dashboard richer. Add your own header names to the lists.",
+    "bill_number": [
+      "Bill Number",
+      "Bill #",
+      "Bill No",
+      "Request ID",
+      "Id",
+      "Budget Number",
+      "Bill/Budget Number",
+      "ID",
+      "Number"
+    ],
+    "rso": [
+      "Organization",
+      "RSO",
+      "Organization Name",
+      "SubmittedOnBehalfOf",
+      "Club",
+      "Branch",
+      "RSO Name"
+    ],
+    "title": [
+      "Bill Name",
+      "Title",
+      "Request Name",
+      "Event Name"
+    ],
+    "event_date": [
+      "Event Date",
+      "Event Start",
+      "Date of Event",
+      "Start Date"
+    ],
+    "submitted_date": [
+      "Submitted Date",
+      "FirstSubmitted",
+      "Submitted",
+      "Date Submitted",
+      "Created"
+    ],
+    "status": [
+      "Status",
+      "Bill Status",
+      "Stage"
+    ],
+    "category": [
+      "Category",
+      "Type",
+      "Bill Type",
+      "Request Type"
+    ],
+    "amount_requested": [
+      "Amount Requested",
+      "RequestedAmount",
+      "Requested Amount",
+      "Requested Total",
+      "Total Requested"
+    ],
+    "amount_approved": [
+      "Amount Approved",
+      "Approved Amount",
+      "AdjustedAmount",
+      "Reviewer Adjusted Total",
+      "Allocated",
+      "Total Approved"
+    ],
+    "expected_attendance": [
+      "Expected Attendance",
+      "Expected Attendees",
+      "Estimated Attendance",
+      "Attendance"
+    ],
+    "engage_id": [
+      "Engage ID",
+      "Review ID",
+      "Engage Link ID"
+    ],
+    "in_queue": [
+      "In Review Queue",
+      "In Queue"
+    ],
+    "review_step": [
+      "Review Step",
+      "CurrentStepName"
+    ],
+    "says_recaps": [
+      "Says All Recaps Submitted"
+    ],
+    "submitter": [
+      "Submitter",
+      "Submitter Name",
+      "SubmitterName"
+    ]
+  },
+  "rules": {
+    "_comment": "Only bills whose status is in 'statuses_requiring_recap' create a recap obligation (leave the list empty to treat every bill as funded). categories_requiring_recap: empty list means every category needs a recap; categories_exempt_from_recap lists categories that never need one (the policy only requires recaps for events). recap_policy_start: bills first submitted before this date never need a recap.",
+    "recap_deadline_days": 14,
+    "second_strike_freeze_days": 30,
+    "fiscal_year_start_month": 7,
+    "statuses_requiring_recap": [
+      "approved",
+      "funded",
+      "partially approved",
+      "paid",
+      "complete",
+      "completed"
+    ],
+    "categories_requiring_recap": [],
+    "categories_exempt_from_recap": [
+      "equipment",
+      "capital",
+      "capital expenditure",
+      "inventory/operations",
+      "travel/competition"
+    ],
+    "low_attendance_ratio": 0.5,
+    "recap_policy_start": "2026-07-01"
+  },
+  "engage_url_template": "https://gatech.campuslabs.com/engage/budgeting/reviews#/edit/{engage_id}",
+  "refresh_seconds": 60
+}

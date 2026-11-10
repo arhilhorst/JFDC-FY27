@@ -1,0 +1,7 @@
+flask>=3.0
+openpyxl>=3.1
+# Only needed for the optional live Microsoft Graph connection:
+msal>=1.28
+requests>=2.31
+# Only needed to run the tests:
+pytest>=8.0

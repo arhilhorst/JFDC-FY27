@@ -1,0 +1,16 @@
+# Optional: one-click hosting on Render (render.com). Read "Hosting it online" in the README first.
+services:
+  - type: web
+    name: jfc-recap-dashboard
+    runtime: python
+    buildCommand: pip install -r requirements.txt gunicorn
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
+    envVars:
+      - key: DASHBOARD_PASSWORD
+        sync: false
+      - key: RECAP_SOURCE
+        sync: false
+      - key: BILLS_SOURCE
+        sync: false
+      - key: GRAPH_CLIENT_ID
+        sync: false

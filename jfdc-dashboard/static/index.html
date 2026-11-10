@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>JFC Recap Dashboard</title>
+  <link rel="icon" href="/static/logo.png">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img class="logo" src="/static/logo.png" alt="SGA logo" onerror="this.nextElementSibling.hidden=false;this.remove()">
+      <span class="wordmark" hidden>SGA</span>
+      <div>
+        <div class="org">Student Government Association · Joint Finance Committee</div>
+        <div class="title">Post-Event Recap Dashboard</div>
+        <div class="subtitle">Recap compliance and strikes under SAF Policy §9.5</div>
+      </div>
+    </div>
+    <div class="controls">
+      <label class="fy">Fiscal year
+        <select id="fySelect"></select>
+      </label>
+      <span id="updated" class="muted"></span>
+      <button id="refreshBtn" class="btn">Refresh now</button>
+    </div>
+  </header>
+
+  <div id="errorBanner" class="banner error" hidden></div>
+  <div id="mappingBanner" class="banner info" hidden></div>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-tab="bills">Bills</button>
+    <button class="tab" data-tab="rsos">RSOs</button>
+    <button class="tab" data-tab="flags">Review flags <span id="flagCount" class="count"></span></button>
+    <button class="tab" data-tab="rules">Strike rules</button>
+    <button class="tab" data-tab="setup">Engage &amp; Excel</button>
+  </nav>
+
+  <main>
+    <section id="stats" class="stats"></section>
+
+    <section class="panel" data-panel="bills">
+      <div class="filters">
+        <input id="billSearch" type="search" placeholder="Search bill #, RSO, or event">
+        <select id="billQueue">
+          <option value="recap">Bills that need a recap</option>
+          <option value="queue">Bills in the review queue</option>
+          <option value="">All bills</option>
+        </select>
+        <select id="billStatus"><option value="">All recap statuses</option></select>
+        <select id="billLevel">
+          <option value="">All strike levels</option>
+          <option value="0">No strikes</option><option value="1">Strike 1</option>
+          <option value="2">Strike 2</option><option value="3">Strike 3</option>
+          <option value="hold">Any strike</option>
+        </select>
+      </div>
+      <div class="table-wrap"><table id="billsTable">
+        <thead><tr><th>Bill #</th><th>RSO</th><th>Bill / event</th><th>Event date</th><th>Post-event recap</th><th class="num">Approved</th></tr></thead>
+        <tbody></tbody>
+      </table></div>
+      <p id="billsEmpty" class="empty" hidden>No bills match.</p>
+      <p id="billsMore" class="empty" hidden></p>
+    </section>
+
+    <section class="panel" data-panel="rsos" hidden>
+      <div class="filters">
+        <input id="rsoSearch" type="search" placeholder="Search RSOs">
+        <select id="rsoLevel">
+          <option value="">All strike levels</option>
+          <option value="0">No strikes</option><option value="1">Strike 1</option>
+          <option value="2">Strike 2</option><option value="3">Strike 3</option>
+        </select>
+      </div>
+      <div class="table-wrap"><table id="rsoTable">
+        <thead><tr><th>RSO</th><th>Strike</th><th class="num">Bills</th><th class="num">On time</th><th class="num">Late</th><th class="num">Missing</th><th class="num">Not tracked</th><th class="num">Due soon</th><th class="num">No recap yet</th><th class="num">Approved</th><th>Last recap</th></tr></thead>
+        <tbody></tbody>
+      </table></div>
+      <p id="rsoEmpty" class="empty" hidden>No RSOs match.</p>
+    </section>
+
+    <section class="panel" data-panel="flags" hidden>
+      <p class="muted">Things a person should look at: recap forms with no readable bill number, numbers not found in the bills sheet, missing proof, odd attendance counts, and events that drew far fewer people than the bill expected. Flags are not strikes.</p>
+      <div id="flagList"></div>
+    </section>
+
+    <section class="panel" data-panel="rules" hidden>
+      <div id="rules"></div>
+    </section>
+
+    <section class="panel" data-panel="setup" hidden>
+      <div id="setup"></div>
+    </section>
+  </main>
+
+  <div id="drawerBackdrop" class="backdrop" hidden></div>
+  <aside id="drawer" class="drawer" hidden aria-live="polite">
+    <button id="drawerClose" class="close" aria-label="Close">×</button>
+    <div id="drawerBody"></div>
+  </aside>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
