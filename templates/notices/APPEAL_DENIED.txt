@@ -1,0 +1,10 @@
+Hi {submitter_name},
+
+JFC reviewed your appeal (#{appeal_id}) of the strike on Bill {bill_id} ("{title}", {rso}).
+After review, the strike stands.
+
+  Reason:  {decision_reason}
+
+If you have new information that was not part of this appeal, reply to this email.
+
+Joint Finance Committee

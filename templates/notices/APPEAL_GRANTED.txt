@@ -1,0 +1,10 @@
+Hi {submitter_name},
+
+Your appeal (#{appeal_id}) of the strike on Bill {bill_id} ("{title}", {rso}) has been granted.
+The strike has been removed and {rso}'s standing has been updated.
+
+  Decision:  {decision_reason}
+
+No further action is needed.
+
+Joint Finance Committee

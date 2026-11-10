@@ -1,7 +1,8 @@
 """Stage 7: notices to the student who submitted the bill (C1).
 
 This cycle: a mail-merge CSV + .eml drafts that a person sends from the JFC mailbox.
-Next cycle: the email bot sends the same queue. Each (bill, notice) goes out once.
+Next cycle: the email bot sends the same queue. Each (bill, notice, ref) goes out once;
+`ref` is the appeal id for appeal emails.
 """
 
 from __future__ import annotations
@@ -25,11 +26,33 @@ SUBJECTS = {
     "STRIKE_REMOVED": "Strike removed for {rso} (Bill {bill_id})",
     "STRIKE_RENUMBERED": "Correction: Bill {bill_id} is now Strike {ordinal} for {rso} (was Strike {old_ordinal})",
     "INCOMPLETE_FIX": "Your Post-Event Recap for Bill {bill_id} is incomplete",
+    "APPEAL_RECEIVED": "Appeal received: Bill {bill_id} ({rso})",
+    "APPEAL_GRANTED": "Appeal granted: strike removed for {rso} (Bill {bill_id})",
+    "APPEAL_DENIED": "Appeal decision: Bill {bill_id} ({rso})",
 }
+APPEAL_NOTICES = {"OPEN": "APPEAL_RECEIVED", "GRANTED": "APPEAL_GRANTED", "DENIED": "APPEAL_DENIED"}
+NO_FORM_YET = ("reply to this email with your RSO, the bill number, why you believe the strike is a mistake, "
+               "and any proof (the online Appeal Form is coming soon)")
 
 
-def build_queue(res: RunResult, already_sent: list[dict], due_soon_days: int) -> pd.DataFrame:
-    sent = {(n["bill_id"], n["notice"]) for n in already_sent}
+def appeal_context(appeals_cfg: dict | None, today) -> dict:
+    """Fields every strike email uses to explain how to appeal."""
+    from datetime import timedelta
+    cfg = appeals_cfg or {}
+    days = int(cfg.get("window_days", 30))
+    url = (cfg.get("form_url") or "").strip()
+    return {"appeal_window_days": days,
+            # The window runs from when the email is SENT, which is on or after today, so this printed
+            # date is never later than the real deadline.
+            "appeal_deadline": today + timedelta(days=days),
+            "appeal_how": f"fill out the Strike Appeal Form: {url}" if url else NO_FORM_YET}
+
+
+def build_queue(res: RunResult, already_sent: list[dict], due_soon_days: int,
+                appeals_cfg: dict | None = None) -> pd.DataFrame:
+    # Send-once key: (bill, notice, ref). `ref` is the appeal id for appeal emails, blank otherwise.
+    sent = {(n["bill_id"], n["notice"], n.get("ref") or "") for n in already_sent}
+    appeal_ctx = appeal_context(appeals_cfg, res.as_of.date())
     q = []
     req = res.requirements
     for r in req.to_dict("records") if len(req) else []:
@@ -48,29 +71,44 @@ def build_queue(res: RunResult, already_sent: list[dict], due_soon_days: int) ->
             n = min(int(s["ordinal"]), 3)
             if not bool(s.get("supported", True)):
                 continue  # basis in question (removal proposed / basis missing): review first, notify nothing new
-            ctx = r | {"consequence": s["consequence"], "ordinal": n}
+            ctx = r | appeal_ctx | {"consequence": s["consequence"], "ordinal": n}
             prior = told.get(s["bill_id"])
             if prior is None:
                 q.append((ctx, f"STRIKE_{n}"))
             elif prior != n:  # an earlier strike was removed: correct the number instead of a 2nd strike notice
                 q.append((ctx | {"old_ordinal": prior}, "STRIKE_RENUMBERED"))
-        elif s["state"] == "removed":
+        elif s["state"] == "removed" and not s.get("via_appeal"):  # appeal grants get APPEAL_GRANTED instead
             q.append((r, "STRIKE_REMOVED"))
+
+    # Appeals: to the student who filed it (falls back to the bill submitter).
+    apps = getattr(res, "appeals", None)
+    for a in apps.to_dict("records") if apps is not None and len(apps) else []:
+        hit = req[req["bill_id"] == a["bill_id"]] if len(req) and a["bill_id"] else req.iloc[0:0]
+        base = hit.iloc[0].to_dict() if len(hit) else {"bill_id": a["bill_id"], "rso": a["rso"], "title": ""}
+        to = a["appellant_email"] or base.get("submitter_email", "")
+        ctx = base | appeal_ctx | {
+            "bill_id": a["bill_id"] or "(not given)", "rso": a["bill_rso"] or a["rso"], "_ref": a["appeal_id"],
+            "submitter_email": to, "submitter_name": a["appellant_name"] or base.get("submitter_name", ""),
+            "appeal_id": a["appeal_id"], "appeal_reason": a["reason"], "decision_reason": a["decision_reason"],
+            "appeal_submitted_at": a["submitted_at"]}
+        q.append((ctx, APPEAL_NOTICES[a["status"]]))
+
     rows = []
     for r, kind in q:
-        if kind != "STRIKE_RENUMBERED" and (r["bill_id"], kind) in sent:
+        ref = r.get("_ref", "")
+        if kind != "STRIKE_RENUMBERED" and (r["bill_id"], kind, ref) in sent:
             continue
         if not r.get("submitter_email"):
             continue
         ctx = _Blank({k: ("" if v is None or (isinstance(v, float) and pd.isna(v)) else v) for k, v in r.items()})
         body = (TEMPLATES / f"{kind}.txt").read_text().format_map(ctx)
         rows.append({"notice": kind, "bill_id": r["bill_id"], "rso": r["rso"], "to": r["submitter_email"],
-                     "to_name": ctx["submitter_name"], "ordinal": ctx["ordinal"],
+                     "to_name": ctx["submitter_name"], "ordinal": ctx["ordinal"], "ref": ref,
                      "subject": SUBJECTS[kind].format_map(ctx), "body": body})
     return pd.DataFrame(rows, columns=QUEUE_COLUMNS)
 
 
-QUEUE_COLUMNS = ["notice", "bill_id", "rso", "to", "to_name", "ordinal", "subject", "body"]
+QUEUE_COLUMNS = ["notice", "bill_id", "rso", "to", "to_name", "ordinal", "ref", "subject", "body"]
 
 
 class _Blank(dict):

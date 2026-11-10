@@ -15,7 +15,7 @@ columns:
   bill_text: "bill/budget number"
   date_location: "event date and location"
   attendees_text: "number of attendees"
-  proof: "proof of attendance"
+  proof: "proof of attendance"   # FLAG (PC-9): only checked for non-empty; links aren't verified to be live
   summary: "event summary"
 optional_columns:
   # PENDING FORM CHANGE - see docs/PENDING_CHANGES.md (PC-1, PC-2).

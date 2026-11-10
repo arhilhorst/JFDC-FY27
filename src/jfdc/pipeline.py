@@ -13,6 +13,7 @@ from .fiscal import fiscal_year, fy_bounds
 from .ingest.service import parse_source
 from .ledger import LedgerState, load_ledger
 from .link import link_recaps, resolve_recap_rsos
+from .rules.appeals import build_appeals
 from .rules.flags import build_flags
 from .rules.recap_rule import build_requirements
 from .rules.strikes import build_strikes, rso_standing
@@ -40,6 +41,7 @@ class RunResult:
     flags: pd.DataFrame
     review: list[dict]
     quarantine: pd.DataFrame
+    appeals: pd.DataFrame = field(default_factory=pd.DataFrame)
     ledger: LedgerState = field(repr=False, default=None)
 
 
@@ -55,6 +57,7 @@ def run_pipeline(ws: Workspace, cfg: Config, as_of: datetime | None = None, allo
     recap_ups = sorted(ws.uploads("recap_form"), key=lambda u: u.as_of)
     detail_ups = sorted(ws.uploads("bill_details"), key=lambda u: u.as_of)
     budget_ups = sorted(ws.uploads("jfc_budgets"), key=lambda u: u.as_of)
+    appeal_ups = sorted(ws.uploads("appeals"), key=lambda u: u.as_of)
     if not engage_ups or not recap_ups:
         raise SystemExit("Need at least one Engage export and one recap-form export. Run `jfdc ingest` first.")
 
@@ -149,14 +152,27 @@ def run_pipeline(ws: Workspace, cfg: Config, as_of: datetime | None = None, allo
             "detail": f"Confirmed strike on bill {s['bill_id']} ({s['rso']}): {s['note']}",
             "action": f"jfdc decide strike_remove bill_id={s['bill_id']} confirmed_by=<confirmer> --reason '...'",
         })
+    # ---- appeals (the Form export is cumulative: the latest upload has every response)
+    appeal_rows = None
+    if appeal_ups:
+        appeal_rows, issues, _, _ = parse_source(ws.path_of(appeal_ups[-1]), "appeals", cfg, appeal_ups[-1].sheet)
+        quarantine += [{"upload": appeal_ups[-1].upload_id, **i} for i in issues]
+    appeals = build_appeals(appeal_rows, strikes, known_bills, ws.notices_sent(), ledger, pol)
+    for a in appeals[appeals["status"] == "OPEN"].to_dict("records"):
+        review.append({"kind": "APPEAL_OPEN",
+                       "detail": f"Appeal {a['appeal_id']} on bill {a['bill_id'] or '?'} ({a['rso']}): {a['reason']}"
+                                 + (f". Check: {a['checks']}" if a["checks"] else ""),
+                       "action": a["action"]})
+
     budget_links = links[links["state"] == "budget_ref"]
     if len(budget_links):
         warnings.append(f"{budget_links['recap_id'].nunique()} recaps cite 5-digit budget IDs; these can't be "
                         "checked until the JFC data sheet budget tab is a source (open item B2).")
 
     return RunResult(
-        as_of=as_of, fy=fy, inputs=[engage, recap] + detail_ups + budget_ups[-1:], warnings=warnings,
+        as_of=as_of, fy=fy, inputs=[engage, recap] + detail_ups + budget_ups[-1:] + appeal_ups[-1:], warnings=warnings,
         watermark=watermark, bills=bills, history=history, recaps=recaps, links=links, requirements=req,
         strikes=strikes, standing=standing, flags=flags, review=review,
-        quarantine=pd.DataFrame(quarantine, columns=["upload", "row", "code", "message"]), ledger=ledger,
+        quarantine=pd.DataFrame(quarantine, columns=["upload", "row", "code", "message"]), appeals=appeals,
+        ledger=ledger,
     )

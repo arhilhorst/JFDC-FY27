@@ -1,0 +1,21 @@
+key: appeals
+label: Strike Appeal Form responses (Microsoft Forms Excel)
+kind: table
+match: prefix          # Form headers are the question titles; match on the start
+encodings: [utf-8-sig, cp1252]
+# PENDING (PC-8): the Appeal Form doesn't exist yet. These are the question titles in docs/APPEALS.md.
+# If the real form words a question differently, change the text here (lowercase start of the title).
+fingerprint: ["reason for appeal", "bill number"]
+columns:
+  response_id: "id"
+  submitted_at: "completion time"
+  rso: "rso name"
+  bill_text: "bill number"
+  appellant_name: "your name"
+  appellant_email: "your gt email"
+  reason: "reason for appeal"
+  explanation: "explanation"
+optional_columns:
+  evidence: "supporting evidence"   # file upload: Forms exports links to the files
+  form_email: "email"               # Forms' own respondent columns (GT-only forms record these)
+  form_name: "name"

@@ -11,8 +11,15 @@ fiscal year.
 
 Consequence: {consequence}.
 
-If you have not yet submitted the Post-Event Recap Form, please do so now. If you believe this
-strike is in error (for example, the event was cancelled, the funds were not used, or the bill
-covered the same event as another bill), reply to this email and JFC will review it.
+If you have not yet submitted the Post-Event Recap Form, please do so now.
+
+HOW TO APPEAL
+If you believe this strike was given by mistake (for example, the recap was submitted on time,
+the event was cancelled or the funds were not used, the bill covered the same event as another
+bill, or the event date is wrong), you may appeal within {appeal_window_days} days of this email
+(by {appeal_deadline}). To appeal, {appeal_how}.
+
+Every appeal is reviewed by a member of JFC. Filing an appeal does not pause the consequence
+above; if the appeal is granted, the strike is removed and your standing is updated.
 
 Joint Finance Committee

@@ -1,0 +1,11 @@
+Hi {submitter_name},
+
+We received your appeal (#{appeal_id}) of the strike on Bill {bill_id} for {rso}.
+
+  Reason given:  {appeal_reason}
+  Received:      {appeal_submitted_at}
+
+A member of JFC will review it and email you the decision. The strike's consequence stays in
+place while the appeal is reviewed. If you have more proof to add, reply to this email.
+
+Joint Finance Committee

@@ -15,6 +15,7 @@ from .pipeline import RunResult
 FILL = {
     "OVERDUE": "F8CBAD", "LATE": "FCE4D6", "NOT_TRACKED": "FCE4D6", "INCOMPLETE": "FFF2CC",
     "NEEDS_REVIEW": "FFF2CC", "DUE": "DDEBF7", "COMPLIANT": "E2EFDA", "NO_EVENT_DATE": "EDEDED",
+    "OPEN": "FFF2CC", "GRANTED": "E2EFDA", "DENIED": "EDEDED",
 }
 
 
@@ -52,6 +53,7 @@ def build_sheets(res: RunResult, prev: pd.DataFrame | None) -> dict[str, pd.Data
         ("Bills LATE (enforced)", int((enf["status"] == "LATE").sum()) if len(enf) else 0),
         ("Strikes awaiting confirmation", int((strikes["state"] == "proposed").sum()) if len(strikes) else 0),
         ("Review items", len(res.review)),
+        ("Appeals open", int((res.appeals["status"] == "OPEN").sum()) if len(res.appeals) else 0),
     ]
     summary_lines += [("Warning", w) for w in res.warnings]
     summary = pd.DataFrame(summary_lines, columns=["Item", "Value"])
@@ -99,6 +101,7 @@ def build_sheets(res: RunResult, prev: pd.DataFrame | None) -> dict[str, pd.Data
         "Overdue & Late": overdue,
         "Strike Confirmation": conf,
         "Strike Tracker": strike_tracker,
+        "Appeals": res.appeals,
         "Due Soon": due,
         "Compliant": compliant,
         "Completeness": completeness,
@@ -140,6 +143,7 @@ def write_run(res: RunResult, runs_dir: Path) -> Path:
     write_workbook(sheets, out / f"JFDC_Compliance_Report_{res.as_of:%Y-%m-%d}{'_DRAFT' if res.watermark else ''}.xlsx")
     res.requirements.to_csv(out / "requirements.csv", index=False)
     res.strikes.to_csv(out / "strikes.csv", index=False)
+    res.appeals.to_csv(out / "appeals.csv", index=False)
     (out / "run.json").write_text(json.dumps({
         "run_id": run_id, "as_of": res.as_of.isoformat(), "fy": res.fy, "watermark": res.watermark,
         "inputs": [{"upload_id": u.upload_id, "sha256": u.sha256, "as_of": u.as_of} for u in res.inputs],

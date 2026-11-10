@@ -14,6 +14,7 @@ import pandas as pd
 
 from ..config import Config
 from ..workspace import Upload, Workspace, sha256_file
+from .appeals import parse_appeals
 from .bill_details import parse_bill_csv, parse_bill_pdf
 from .budgets import parse_budgets
 from .detect import IngestError, detect_sources, read_table
@@ -49,6 +50,10 @@ def parse_source(path: Path, source: str, cfg: Config, sheet: str | None = None)
             return pd.DataFrame([row]), [], [], row.get("submitted_at")
         details, issues, warns = parse_bill_csv(read_table(path, spec.get("encodings"), sheet), spec)
         return details, issues, warns, None
+    if source == "appeals":
+        appeals, issues, warns = parse_appeals(read_table(path, spec.get("encodings"), sheet), spec)
+        newest = appeals["submitted_at"].max().to_pydatetime() if len(appeals) else None
+        return appeals, issues, warns, newest
     if source == "jfc_budgets":
         return parse_budgets(read_table(path, spec.get("encodings"), sheet), spec), [], [], None
     raise IngestError(f"Unknown source {source!r}")

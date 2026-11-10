@@ -84,7 +84,7 @@ def cmd_run(args):
         print(f"BLOCKED: {e}", file=sys.stderr)
         return 2
     out = write_run(res, ws.runs_dir)
-    queue = build_queue(res, ws.notices_sent(), cfg.policy["recap"]["due_soon_days"])
+    queue = build_queue(res, ws.notices_sent(), cfg.policy["recap"]["due_soon_days"], cfg.policy.get("appeals"))
     write_notices(queue, out)
     req = res.requirements
     print(f"Run {out.name}  as of {res.as_of:%Y-%m-%d %H:%M}  FY{res.fy}  {res.watermark}")
@@ -92,6 +92,8 @@ def cmd_run(args):
         print(req.groupby(["class", "status"]).size().to_string())
     print(f"Strikes awaiting confirmation: {int((res.strikes['state'] == 'proposed').sum()) if len(res.strikes) else 0}")
     print(f"Review items: {len(res.review)}   Flags: {len(res.flags)}   Notices drafted: {len(queue)}")
+    if len(res.appeals):
+        print(f"Appeals: {int((res.appeals['status'] == 'OPEN').sum())} open, {len(res.appeals)} total")
     for w in res.warnings:
         print(f"warning: {w}")
     print(f"Report: {out}")
@@ -150,6 +152,7 @@ def cmd_mark_sent(args):
         ordinal = n.get("ordinal")
         ws.mark_notice_sent({"bill_id": n["bill_id"], "notice": n["notice"], "to": n["to"], "run_id": args.run_id,
                              "ordinal": ordinal if isinstance(ordinal, str) else "",
+                             "ref": n["ref"] if isinstance(n.get("ref"), str) else "",
                              "sent_by": args.actor, "sent_at": datetime.now().isoformat(timespec="seconds")})
     print(f"Marked {len(q)} notices sent.")
 

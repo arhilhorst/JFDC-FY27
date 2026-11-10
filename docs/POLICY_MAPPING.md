@@ -12,6 +12,7 @@
 | `R-9.5.1-DATE-MISMATCH` | §9.5.1 | The bill's event date and the recap's differ by more than a day | No | `rules/flags.py` |
 | `R-9.5-ATTESTATION` | §9.5 / bill page question | RSO answered "Yes, all recaps submitted" on a new bill while one was overdue | No (high-severity flag) | `rules/flags.py` |
 | `R-9.5-FUNDS-NOT-USED` | Chair decision C2 | Recap says funds weren't used: COMPLETENESS class, no strike | No | `rules/flags.py` |
+| `APPEAL_OPEN` (review item) | Chair decision (appeals) | An RSO appealed a strike as a mistake. Admin grants (strike removed) or denies. | Grant removes one | `rules/appeals.py`, `docs/APPEALS.md` |
 | `R-9.6-BILLS-CAP` | §9.6 | An RSO's approved FY bills exceed the cap in `policy.yaml` ($40,000, per the JFC sheet; see O4) | No | `rules/flags.py` |
 
 **Strike consequences (§9.5.2)**, in `rules/strikes.py::consequence`:

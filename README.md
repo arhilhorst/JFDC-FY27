@@ -7,6 +7,7 @@ compliance report for the JVPF, a strike-confirmation sheet, and draft notices t
 - **Design:** [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 - **Running it each day:** [`docs/RUNBOOK.md`](docs/RUNBOOK.md)
 - **Which rule does what:** [`docs/POLICY_MAPPING.md`](docs/POLICY_MAPPING.md)
+- **Strike appeals:** [`docs/APPEALS.md`](docs/APPEALS.md)
 - **Changes we're waiting on from Engage, the Form and the JFC sheet:** [`docs/PENDING_CHANGES.md`](docs/PENDING_CHANGES.md)
 
 ## Quickstart

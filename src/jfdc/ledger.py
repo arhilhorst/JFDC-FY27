@@ -25,11 +25,16 @@ DECISION_TYPES: dict[str, tuple[set[str], tuple[str, ...]]] = {
     "strike_confirm": ({"admin", "reviewer", "confirmer"}, ("bill_id", "confirmed_by")),
     "strike_waive": ({"admin", "reviewer", "confirmer"}, ("bill_id", "confirmed_by")),
     "strike_remove": ({"admin", "reviewer", "confirmer"}, ("bill_id", "confirmed_by")),
+    # Appeals (docs/APPEALS.md): decided by an admin. A grant removes the strike on that bill.
+    "appeal_grant": ({"admin"}, ("appeal_id", "bill_id")),
+    "appeal_deny": ({"admin"}, ("appeal_id", "bill_id")),
     "report_approve": ({"admin"}, ("run_id",)),
     "revoke": ({"admin"}, ("decision_id",)),
 }
 STRIKE_TYPES = {"strike_confirm", "strike_waive", "strike_remove"}
-REASON_REQUIRED = {"exemption", "funds_not_used", "strike_waive", "strike_remove", "revoke", "event_date_override"}
+REASON_REQUIRED = {"exemption", "funds_not_used", "strike_waive", "strike_remove", "revoke", "event_date_override",
+                   "appeal_grant", "appeal_deny"}
+APPEAL_TYPES = {"appeal_grant", "appeal_deny"}
 
 
 class PermissionDenied(Exception):
@@ -88,6 +93,7 @@ class LedgerState:
     event_date_overrides: dict[str, str] = field(default_factory=dict)
     strike_decisions: dict[str, dict] = field(default_factory=dict)  # bill_id -> LATEST strike decision
     approvals: dict[str, dict] = field(default_factory=dict)  # run_id -> decision
+    appeal_decisions: dict[tuple[str, str], dict] = field(default_factory=dict)  # (appeal_id, bill_id) -> LATEST
 
 
 def load_ledger(decisions: list[dict]) -> LedgerState:
@@ -116,6 +122,15 @@ def load_ledger(decisions: list[dict]) -> LedgerState:
         elif t in STRIKE_TYPES:
             # Later entries win. `_seq` (position in the ledger) numbers strikes in confirmation order.
             st.strike_decisions[d["bill_id"]] = {**d, "_seq": seq}
+        elif t in APPEAL_TYPES:
+            key = (d["appeal_id"], d["bill_id"])
+            st.appeal_decisions[key] = {**d, "_seq": seq, "strike_removed": False}
+            prior = st.strike_decisions.get(d["bill_id"])
+            if t == "appeal_grant" and prior and prior["type"] == "strike_confirm":
+                # A granted appeal acts as a strike_remove by the admin who decided it.
+                st.strike_decisions[d["bill_id"]] = {**d, "type": "strike_remove", "confirmed_by": d["actor"],
+                                                     "_seq": seq, "via_appeal": d["appeal_id"]}
+                st.appeal_decisions[key]["strike_removed"] = True
         elif t == "report_approve":
             st.approvals[d["run_id"]] = d
     return st

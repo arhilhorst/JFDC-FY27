@@ -102,6 +102,24 @@ class World:
         return run_pipeline(ws, cfg, as_of=as_of, allow_stale=allow_stale)
 
 
+APPEAL_COLS = ["ID", "Start time", "Completion time", "Email", "Name", "RSO name", "Bill number", "Your name",
+               "Your GT email", "Reason for appeal", "Explanation", "Supporting evidence"]
+
+
+def write_appeals(world: World, rows: list[dict], as_of: datetime) -> None:
+    """rows: {id, bill, submitted, rso?, reason?, email?}. Written as the Forms Excel export, then ingested."""
+    out = []
+    for r in rows:
+        out.append({"ID": str(r["id"]), "Start time": r["submitted"], "Completion time": r["submitted"],
+                    "Email": "appellant@gatech.edu", "Name": "Appellant", "RSO name": r.get("rso", "Alpha Club"),
+                    "Bill number": r["bill"], "Your name": "Pat Appellant", "Your GT email": r.get("email", ""),
+                    "Reason for appeal": r.get("reason", "Recap was submitted on time"),
+                    "Explanation": "We filed it on time, see screenshot", "Supporting evidence": ""})
+    f = world.root / "in" / f"appeals{len(world.ws.uploads()) + 1}.xlsx"
+    pd.DataFrame(out, columns=APPEAL_COLS).to_excel(f, index=False)
+    ingest_file(world.ws, world.cfg, f, by=OPERATOR, as_of=as_of)
+
+
 @pytest.fixture
 def world(tmp_path):
     return World(tmp_path)

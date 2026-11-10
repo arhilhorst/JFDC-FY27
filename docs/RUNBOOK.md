@@ -27,6 +27,7 @@ and sync never has to merge anything. Keep the data folder set to **"Always keep
 |---|---|---|
 | **JFC Data Sheet** (the whole `.xlsx`) | Walker's sheet, updated Mon/Tue and Wed/Thu | After each update. One upload covers three sources: `Data Pasting Site` (Engage export), `CampusLabs_Budget_Requests` (scraper output with event dates) and `FY27 Final Budgets`. Other tabs are skipped. |
 | Recap Form responses | Microsoft Forms → Open in Excel → download | **Every run** (a run is blocked if this file is more than 24 h old) |
+| Strike Appeal Form responses | Microsoft Forms → Open in Excel → download (once the form exists, PC-8) | Each run while appeals are open. See `docs/APPEALS.md` |
 | Bill PDF (optional) | Bill page → **PDF** button | Only for a bill missing from the scraper tab |
 
 All times are **Eastern** (Engage, Forms and `--as-of`).
@@ -60,6 +61,9 @@ jfdc decide alias_add alias="GWiE" rso="Graduate Women in Engineering" --actor l
 jfdc decide event_date_override bill_id=381493 event_date=2026-09-24 --reason "RSO typed 2006" --actor lead@gatech.edu
 jfdc decide exemption bill_id=... --reason "event cancelled, SOFO confirmed" --actor lead@gatech.edu
 ```
+Appeals (admin only): see the **Appeals** tab, then `jfdc decide appeal_grant|appeal_deny appeal_id=.. bill_id=.. --reason ".."`.
+Details: `docs/APPEALS.md`.
+
 Then send the **Strike Confirmation** sheet to Walker or JFC. When it comes back filled in:
 ```bash
 jfdc import-confirmations returned_report.xlsx --actor lead@gatech.edu

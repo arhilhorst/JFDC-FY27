@@ -85,6 +85,7 @@ def _strike_row(r: dict, ledger: LedgerState, supported: bool) -> dict:
         "decided_by": (d or {}).get("confirmed_by", ""), "decision_reason": (d or {}).get("reason", ""),
         "supported": supported, "note": note.strip(),
         "confirmed_seq": d["_seq"] if d else None, "fy_fallback_date": _as_date((d or {}).get("at")),
+        "via_appeal": (d or {}).get("via_appeal", ""),
     }
 
 
@@ -119,7 +120,7 @@ def _basis_missing_row(bid: str, d: dict, bills: pd.DataFrame | None, due_days: 
         "supported": False,
         "note": f"BASIS MISSING: confirmed strike on a bill {why}. Stays counted until a confirmer records "
                 "strike_remove (or the bill reappears).",
-        "confirmed_seq": d["_seq"], "fy_fallback_date": _as_date(d.get("at")),
+        "confirmed_seq": d["_seq"], "fy_fallback_date": _as_date(d.get("at")), "via_appeal": "",
     }
 
 

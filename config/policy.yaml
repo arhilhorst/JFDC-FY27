@@ -52,3 +52,10 @@ flags:
     cents: 4000000
   attestation:
     enabled: true                # RSO answered "Yes, all recaps submitted" while one was overdue
+
+appeals:
+  # An RSO that believes a strike was a mistake can appeal; every appeal is reviewed by hand (docs/APPEALS.md).
+  window_days: 30        # Chair decision 2026-11: appeal within 30 days of the strike email
+  # Chair decision: an open appeal does NOT pause the strike's consequence (the engine never pauses).
+  # PENDING (PC-8): paste the Appeal Form link here when it exists. Until then strike emails say to reply instead.
+  form_url: ""
