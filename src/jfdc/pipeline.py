@@ -50,6 +50,7 @@ def run_pipeline(ws: Workspace, cfg: Config, as_of: datetime | None = None, allo
     stale: list[str] = []
     fresh = pol["freshness"]
 
+    ws.check_sync_conflicts()  # a conflict copy may hold decisions this run would silently ignore
     engage_ups = sorted(ws.uploads("engage_line_items"), key=lambda u: u.as_of)
     recap_ups = sorted(ws.uploads("recap_form"), key=lambda u: u.as_of)
     detail_ups = sorted(ws.uploads("bill_details"), key=lambda u: u.as_of)
@@ -97,6 +98,11 @@ def run_pipeline(ws: Workspace, cfg: Config, as_of: datetime | None = None, allo
         has_id = det["bill_id"].notna() & (det["bill_id"].astype(str) != "")
         det = pd.concat([det[has_id].drop_duplicates("bill_id", keep="last"), det[~has_id]], ignore_index=True)
     bills = attach_details(bills, det, review)
+    # Every bill ever seen (latest version wins), so a confirmed strike on a bill that has since dropped out
+    # of the export can still be attributed to its RSO and event FY.
+    known_bills = pd.concat([b for _, b in snapshots], ignore_index=True).drop_duplicates("bill_id", keep="last")
+    known_bills = attach_details(known_bills, det, [])
+    known_bills["in_latest_export"] = known_bills["bill_id"].isin(bills["bill_id"])
 
     # ---- RSOs
     budgets = parse_source(ws.path_of(budget_ups[-1]), "jfc_budgets", cfg, budget_ups[-1].sheet)[0] if budget_ups else None
@@ -112,10 +118,15 @@ def run_pipeline(ws: Workspace, cfg: Config, as_of: datetime | None = None, allo
     # ---- link + evaluate
     links = link_recaps(recaps, bills, ledger, pol["matching"]["fallback_date_window_days"])
     fy = fiscal_year(as_of.date(), pol["fiscal_year"]["start_month"], pol["fiscal_year"]["start_day"])
-    scope = cfg.scope_for_fy(fy)
+    scope = dict(cfg.scope_for_fy(fy))
+    prev_scope = pol.get("scope", {}).get(fy - 1)
     fy_start = fy_bounds(fy, pol["fiscal_year"]["start_month"], pol["fiscal_year"]["start_day"])[0]
+    if prev_scope:
+        scope["carryover_bill_processes"] = prev_scope["bill_processes"]
+    elif as_of.date() < fy_start + timedelta(days=60):
+        warnings.append(f"No FY{fy - 1} scope in policy.yaml: last FY's bills with recaps due this FY are not checked.")
     req = build_requirements(bills, recaps, links, ledger, pol, scope, as_of, fy_start)
-    strikes = build_strikes(req, ledger, pol, as_of)
+    strikes = build_strikes(req, ledger, pol, as_of, known_bills)
     standing = rso_standing(strikes, req, fy)
     flags = build_flags(bills, req, recaps, links, pol, scope)
 
@@ -132,6 +143,12 @@ def run_pipeline(ws: Workspace, cfg: Config, as_of: datetime | None = None, allo
         if "implausible" in (r["notes"] or "") or "Ambiguous event date" in (r["notes"] or ""):
             review.append({"kind": "CHECK_EVENT_DATE", "detail": f"Bill {r['bill_id']} ({r['rso']}): {r['notes']}",
                            "action": f"jfdc decide event_date_override bill_id={r['bill_id']} event_date=YYYY-MM-DD"})
+    for s in strikes[strikes["status"] == "BASIS_MISSING"].to_dict("records") if len(strikes) else []:
+        review.append({
+            "kind": "STRIKE_BASIS_MISSING",
+            "detail": f"Confirmed strike on bill {s['bill_id']} ({s['rso']}): {s['note']}",
+            "action": f"jfdc decide strike_remove bill_id={s['bill_id']} confirmed_by=<confirmer> --reason '...'",
+        })
     budget_links = links[links["state"] == "budget_ref"]
     if len(budget_links):
         warnings.append(f"{budget_links['recap_id'].nunique()} recaps cite 5-digit budget IDs; these can't be "

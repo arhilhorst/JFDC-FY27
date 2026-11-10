@@ -16,7 +16,7 @@ from .ledger import PermissionDenied, record_decision
 from .notify import build_queue, write_notices
 from .pipeline import StaleDataError, run_pipeline
 from .report import write_run
-from .workspace import Workspace, default_data_dir
+from .workspace import SyncConflictError, Workspace, default_data_dir
 
 
 def _ws(args) -> Workspace:
@@ -127,8 +127,11 @@ def cmd_import_confirmations(args):
             rc = 1
             continue
         try:
+            # Snapshot the bill's identity on the decision, so the strike stays explainable even if the
+            # bill later drops out of the Engage export (BASIS_MISSING).
+            snap = {k: r[k] for k in ("rso", "title", "event_date", "due_date") if r.get(k)}
             record_decision(ws, cfg, kinds[act], args.actor, r.get("Reason", ""), bill_id=r["bill_id"],
-                            confirmed_by=r[by_col], source=Path(args.workbook).name)
+                            confirmed_by=r[by_col], source=Path(args.workbook).name, **snap)
             n += 1
         except (PermissionDenied, ValueError) as err:
             print(f"Bill {r['bill_id']}: DENIED {err}", file=sys.stderr)
@@ -144,7 +147,9 @@ def cmd_mark_sent(args):
     if args.only:
         q = q[q["bill_id"].isin(args.only)]
     for n in q.to_dict("records"):
+        ordinal = n.get("ordinal")
         ws.mark_notice_sent({"bill_id": n["bill_id"], "notice": n["notice"], "to": n["to"], "run_id": args.run_id,
+                             "ordinal": ordinal if isinstance(ordinal, str) else "",
                              "sent_by": args.actor, "sent_at": datetime.now().isoformat(timespec="seconds")})
     print(f"Marked {len(q)} notices sent.")
 
@@ -189,7 +194,11 @@ def main(argv=None):
     s.set_defaults(fn=cmd_mark_sent)
 
     args = p.parse_args(argv)
-    return args.fn(args) or 0
+    try:
+        return args.fn(args) or 0
+    except SyncConflictError as e:
+        print(f"BLOCKED: {e}", file=sys.stderr)
+        return 3
 
 
 if __name__ == "__main__":

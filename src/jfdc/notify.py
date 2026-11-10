@@ -23,6 +23,7 @@ SUBJECTS = {
     "STRIKE_2": "SAF Policy 9.5.2 - Strike 2 for {rso} (Bill {bill_id})",
     "STRIKE_3": "SAF Policy 9.5.2 - Strike 3 for {rso} (Bill {bill_id})",
     "STRIKE_REMOVED": "Strike removed for {rso} (Bill {bill_id})",
+    "STRIKE_RENUMBERED": "Correction: Bill {bill_id} is now Strike {ordinal} for {rso} (was Strike {old_ordinal})",
     "INCOMPLETE_FIX": "Your Post-Event Recap for Bill {bill_id} is incomplete",
 }
 
@@ -38,23 +39,57 @@ def build_queue(res: RunResult, already_sent: list[dict], due_soon_days: int) ->
             q.append((r, "REMINDER_DUE_SOON" if r["days_left"] <= due_soon_days else "REMINDER_OPEN"))
         elif r["status"] == "INCOMPLETE":
             q.append((r, "INCOMPLETE_FIX"))  # drafted; reviewer decides whether to send (C7)
+    told = last_strike_number_sent(already_sent)
     stk = res.strikes
     for s in stk.to_dict("records") if len(stk) else []:
-        r = req[req["bill_id"] == s["bill_id"]].iloc[0].to_dict()
+        hit = req[req["bill_id"] == s["bill_id"]] if len(req) else req
+        r = hit.iloc[0].to_dict() if len(hit) else dict(s)  # BASIS_MISSING strikes have no requirement row
         if s["state"] == "confirmed" and s["ordinal"]:
-            q.append((r | {"consequence": s["consequence"]}, f"STRIKE_{min(int(s['ordinal']), 3)}"))
+            n = min(int(s["ordinal"]), 3)
+            if not bool(s.get("supported", True)):
+                continue  # basis in question (removal proposed / basis missing): review first, notify nothing new
+            ctx = r | {"consequence": s["consequence"], "ordinal": n}
+            prior = told.get(s["bill_id"])
+            if prior is None:
+                q.append((ctx, f"STRIKE_{n}"))
+            elif prior != n:  # an earlier strike was removed: correct the number instead of a 2nd strike notice
+                q.append((ctx | {"old_ordinal": prior}, "STRIKE_RENUMBERED"))
         elif s["state"] == "removed":
             q.append((r, "STRIKE_REMOVED"))
     rows = []
     for r, kind in q:
-        if (r["bill_id"], kind) in sent:
+        if kind != "STRIKE_RENUMBERED" and (r["bill_id"], kind) in sent:
             continue
-        ctx = {k: ("" if v is None or (isinstance(v, float) and pd.isna(v)) else v) for k, v in r.items()}
-        ctx.setdefault("consequence", "")
-        body = (TEMPLATES / f"{kind}.txt").read_text().format(**ctx)
+        if not r.get("submitter_email"):
+            continue
+        ctx = _Blank({k: ("" if v is None or (isinstance(v, float) and pd.isna(v)) else v) for k, v in r.items()})
+        body = (TEMPLATES / f"{kind}.txt").read_text().format_map(ctx)
         rows.append({"notice": kind, "bill_id": r["bill_id"], "rso": r["rso"], "to": r["submitter_email"],
-                     "to_name": r["submitter_name"], "subject": SUBJECTS[kind].format(**ctx), "body": body})
-    return pd.DataFrame(rows, columns=["notice", "bill_id", "rso", "to", "to_name", "subject", "body"])
+                     "to_name": ctx["submitter_name"], "ordinal": ctx["ordinal"],
+                     "subject": SUBJECTS[kind].format_map(ctx), "body": body})
+    return pd.DataFrame(rows, columns=QUEUE_COLUMNS)
+
+
+QUEUE_COLUMNS = ["notice", "bill_id", "rso", "to", "to_name", "ordinal", "subject", "body"]
+
+
+class _Blank(dict):
+    """Template context: a field the row doesn't have renders as blank instead of raising KeyError."""
+
+    def __missing__(self, key):
+        return ""
+
+
+def last_strike_number_sent(already_sent: list[dict]) -> dict[str, int]:
+    """bill_id -> the strike number the RSO was last told (from STRIKE_n and STRIKE_RENUMBERED notices)."""
+    told: dict[str, int] = {}
+    for n in already_sent:  # in send order
+        kind = n.get("notice", "")
+        if kind.startswith("STRIKE_") and kind[-1].isdigit():
+            told[n["bill_id"]] = int(kind[-1])
+        elif kind == "STRIKE_RENUMBERED" and str(n.get("ordinal") or "").strip().isdigit():
+            told[n["bill_id"]] = int(str(n["ordinal"]).strip())
+    return told
 
 
 def write_notices(queue: pd.DataFrame, out_dir: Path, sender: str = "") -> None:

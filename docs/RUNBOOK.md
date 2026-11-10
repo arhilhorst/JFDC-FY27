@@ -9,6 +9,12 @@ decisions also need a `confirmer`'s sign-off.
    lead have write access to `roles.yaml` and `ledger/` in that folder.
 3. The Chair copies `config/roles.example.yaml` to `<data dir>/roles.yaml` and fills in GT emails.
 
+### OneDrive / SharePoint sync conflicts
+If two people write to the data folder at once, OneDrive can create a conflict copy such as
+`ledger/decisions-LAPTOP.jsonl` or `manifest (1).jsonl`. `jfdc` then **refuses** to ingest, decide, mark notices sent or run
+(exit code 3), because the copy may hold decisions the real file doesn't. To fix it, append the copy's lines to the
+real file, dropping lines that already appear there, then delete the copy. Keep the data folder set to **"Always keep on this device"**.
+
 ## 1. Pull the data
 | What | Where | Cadence |
 |---|---|---|

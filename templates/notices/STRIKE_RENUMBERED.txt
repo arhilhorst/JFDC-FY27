@@ -1,0 +1,14 @@
+Hi {submitter_name},
+
+An earlier strike for {rso} this fiscal year was removed after review, so the strike for
+Bill {bill_id} ("{title}") is now Strike {ordinal} (it was Strike {old_ordinal}).
+
+  Bill:        {bill_id} ("{title}")
+  Event date:  {event_date}
+  Recap due:   {due_date}
+
+Consequence now: {consequence}.
+
+No action is needed beyond any recap that is still outstanding. Reply to this email with questions.
+
+Joint Finance Committee

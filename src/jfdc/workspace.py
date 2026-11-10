@@ -24,6 +24,10 @@ from datetime import datetime
 from pathlib import Path
 
 
+class SyncConflictError(Exception):
+    pass
+
+
 def default_data_dir() -> Path:
     return Path(os.environ.get("JFDC_DATA_DIR", "data")).resolve()
 
@@ -80,6 +84,27 @@ class Workspace:
         if not self.manifest_path.exists():
             raise SystemExit(f"No JFDC data directory at {self.root}. Run `jfdc init` first.")
 
+    def sync_conflicts(self) -> list[Path]:
+        """Stray copies of the system-of-record files, e.g. OneDrive's `decisions-LAPTOP.jsonl` or
+        `manifest (1).jsonl`. Each one may hold decisions/uploads the real file doesn't have."""
+        expected = {self.manifest_path, self.ledger_path, self.notices_path}
+        stems = {p.stem for p in expected}
+        found = []
+        for d in {p.parent for p in expected}:
+            if d.exists():
+                found += [p for p in d.iterdir() if p not in expected and p.is_file()
+                          and any(p.name.startswith(s) for s in stems)]
+        return sorted(found)
+
+    def check_sync_conflicts(self) -> None:
+        if stray := self.sync_conflicts():
+            raise SyncConflictError(
+                "Possible OneDrive/SharePoint sync conflict copies: "
+                + ", ".join(str(p.relative_to(self.root)) for p in stray)
+                + ". Merge their lines into the real file (keep every line, drop exact duplicates), "
+                "delete the copy, then re-run. Nothing was written."
+            )
+
     # ------------------------------------------------------------ manifest
     def uploads(self, source: str | None = None) -> list[Upload]:
         out = [Upload(**r) for r in _read_jsonl(self.manifest_path)]
@@ -91,6 +116,7 @@ class Workspace:
     def store_upload(self, src: Path, source: str, as_of: datetime, by: str, rows_ok: int,
                      rows_quarantined: int, newest_record: str | None, notes: str = "",
                      sheet: str | None = None) -> Upload:
+        self.check_sync_conflicts()
         sha = sha256_file(src)
         n = len(self.uploads(source)) + 1
         stamp = as_of.strftime("%Y-%m-%d_%H%M")
@@ -132,6 +158,7 @@ class Workspace:
         return _read_jsonl(self.notices_path)
 
     def mark_notice_sent(self, entry: dict) -> None:
+        self.check_sync_conflicts()
         _append_jsonl(self.notices_path, entry)
 
 

@@ -40,7 +40,9 @@ def build_requirements(bills: pd.DataFrame, recaps: pd.DataFrame, links: pd.Data
     eff = links[links["state"].isin(["auto", "confirmed"])]
     pending = links[links["state"] == "needs_review"]
 
-    in_scope = bills[bills["process"].isin(scope["bill_processes"])]
+    # Last FY's bills stay in scope while their recap falls due in this FY (a 6/25 event is due 7/9).
+    carryover = set(scope.get("carryover_bill_processes", []))
+    in_scope = bills[bills["process"].isin(set(scope["bill_processes"]) | carryover)]
     in_scope = in_scope[~(in_scope["first_submitted"] > pd.Timestamp(as_of))]  # not yet submitted as of this run
     earliest_plausible = fy_start - timedelta(days=60)
     rows = []
@@ -81,6 +83,9 @@ def build_requirements(bills: pd.DataFrame, recaps: pd.DataFrame, links: pd.Data
                 implausible, ev = ev, None  # typo like 09/24/2006: never strike on it (principle 1)
 
         due = ev + timedelta(days=due_days) if ev else None
+        if b["process"] in carryover and b["process"] not in scope["bill_processes"] and (
+                due is None or due < fy_start):
+            continue  # last FY's bill whose recap was due last FY: settled in last FY's reports
         deadline = datetime.combine(due, time(23, 59, 59)) if due else None
 
         status, days_left, days_over, notes = None, None, None, []

@@ -46,6 +46,7 @@ def record_decision(ws: Workspace, cfg: Config, dtype: str, actor: str, reason: 
     if dtype not in DECISION_TYPES:
         raise ValueError(f"Unknown decision type {dtype!r}. Known: {', '.join(sorted(DECISION_TYPES))}")
     allowed, required = DECISION_TYPES[dtype]
+    ws.check_sync_conflicts()
     if not cfg.roles:
         raise PermissionDenied(
             f"No roles.yaml in {ws.root}. Copy config/roles.example.yaml there and fill in GT emails."
@@ -94,7 +95,7 @@ def load_ledger(decisions: list[dict]) -> LedgerState:
 
     revoked = {d["decision_id"] for d in decisions if d["type"] == "revoke"}
     st = LedgerState()
-    for d in decisions:
+    for seq, d in enumerate(decisions):
         if d["id"] in revoked or d["type"] == "revoke":
             continue
         t = d["type"]
@@ -113,7 +114,8 @@ def load_ledger(decisions: list[dict]) -> LedgerState:
         elif t == "event_date_override":
             st.event_date_overrides[d["bill_id"]] = d["event_date"]
         elif t in STRIKE_TYPES:
-            st.strike_decisions[d["bill_id"]] = d  # later entries win
+            # Later entries win. `_seq` (position in the ledger) numbers strikes in confirmation order.
+            st.strike_decisions[d["bill_id"]] = {**d, "_seq": seq}
         elif t == "report_approve":
             st.approvals[d["run_id"]] = d
     return st

@@ -309,3 +309,86 @@ def test_scraper_csv_formula_guard_and_flagged_rows(world, tmp_path):
     assert r.source == "bill_details" and r.upload.rows_ok == 1 and r.upload.rows_quarantined == 2
     d = parse_source(world.ws.path_of(r.upload), "bill_details", world.cfg)[0]
     assert d.iloc[0]["event_last_date"] == date(2026, 11, 18)
+
+
+# Strike integrity: numbering, persistence, FY carryover, sync conflicts
+def _sent(queue, run_id="r1"):
+    return [{"bill_id": n["bill_id"], "notice": n["notice"], "ordinal": n["ordinal"], "run_id": run_id}
+            for n in queue.to_dict("records")]
+
+
+def test_confirming_an_older_strike_later_does_not_renumber(world):
+    world.bill(100400, event_date=date(2026, 8, 20)).bill(100401, event_date=date(2026, 9, 1))
+    world.write_and_run(datetime(2026, 9, 20))
+    record_decision(world.ws, world.cfg, "strike_confirm", REVIEWER, bill_id="100401", confirmed_by=CONFIRMER)
+    q1 = build_queue(rerun(world, datetime(2026, 9, 20)), [], 3)
+    assert q1.query("notice.str.startswith('STRIKE')")[["bill_id", "notice"]].values.tolist() == [["100401", "STRIKE_1"]]
+
+    record_decision(world.ws, world.cfg, "strike_confirm", REVIEWER, bill_id="100400", confirmed_by=CONFIRMER)
+    res = rerun(world, datetime(2026, 9, 21))
+    by = res.strikes.set_index("bill_id")
+    assert by.at["100401", "ordinal"] == 1 and by.at["100400", "ordinal"] == 2
+    q2 = build_queue(res, _sent(q1), 3).query("notice.str.startswith('STRIKE')")
+    assert q2[["bill_id", "notice"]].values.tolist() == [["100400", "STRIKE_2"]]
+
+
+def test_removed_strike_sends_renumber_correction_not_a_new_strike(world):
+    world.bill(100410, event_date=date(2026, 8, 20)).bill(100411, event_date=date(2026, 9, 1))
+    world.write_and_run(datetime(2026, 9, 20))
+    for b in ("100410", "100411"):
+        record_decision(world.ws, world.cfg, "strike_confirm", REVIEWER, bill_id=b, confirmed_by=CONFIRMER)
+    sent = _sent(build_queue(rerun(world, datetime(2026, 9, 20)), [], 3))
+    record_decision(world.ws, world.cfg, "strike_remove", REVIEWER, reason="same event", bill_id="100410",
+                    confirmed_by=CONFIRMER)
+    q = build_queue(rerun(world, datetime(2026, 9, 21)), sent, 3).query("notice.str.startswith('STRIKE')")
+    assert sorted(q[["bill_id", "notice"]].values.tolist()) == [["100410", "STRIKE_REMOVED"],
+                                                               ["100411", "STRIKE_RENUMBERED"]]
+    assert "now Strike 1" in q.set_index("bill_id").at["100411", "subject"]
+    q_after = build_queue(rerun(world, datetime(2026, 9, 21)), sent + _sent(q), 3)
+    assert q_after.query("notice.str.startswith('STRIKE')").empty
+
+
+def test_confirmed_strike_survives_bill_leaving_the_export(world):
+    world.bill(100420, event_date=date(2026, 8, 20)).bill(100421, event_date=date(2026, 8, 25))
+    world.write_and_run(datetime(2026, 9, 20))
+    record_decision(world.ws, world.cfg, "strike_confirm", REVIEWER, bill_id="100420", confirmed_by=CONFIRMER)
+    world.bills = [b for b in world.bills if b["Id"] != "100420"]  # dropped from the next export
+    world.details = [d for d in world.details if d["Bill Number"] != "100420"]
+    res = world.write_and_run(datetime(2026, 9, 21), allow_stale=True)
+    s = strikes_for(res, 100420).iloc[0]
+    assert s["state"] == "confirmed" and s["status"] == "BASIS_MISSING" and s["ordinal"] == 1
+    assert any(r["kind"] == "STRIKE_BASIS_MISSING" for r in res.review)
+    assert res.standing.set_index("rso").at["Alpha Club", "confirmed_strikes"] == 1
+    build_queue(res, [], 3)  # must not crash on a strike with no requirement row
+
+
+def test_last_fy_bill_due_in_new_fy_is_still_checked(world, tmp_path, monkeypatch):
+    import shutil
+
+    import yaml
+
+    from jfdc.config import REPO_ROOT
+    cdir = tmp_path / "config"
+    shutil.copytree(REPO_ROOT / "config", cdir)
+    pol = yaml.safe_load((cdir / "policy.yaml").read_text())
+    pol["scope"][28] = {"bill_processes": ["SGA Bills Process FY28"], "budget_processes": []}
+    (cdir / "policy.yaml").write_text(yaml.safe_dump(pol))
+    monkeypatch.setenv("JFDC_CONFIG_DIR", str(cdir))
+
+    world.bill(100430, event_date=date(2027, 6, 25), submitted="5/1/2027 12:00")  # due 7/9/2027
+    world.bill(100431, event_date=date(2027, 5, 1), submitted="4/1/2027 12:00")   # due 5/15: settled in FY27
+    res = world.write_and_run(datetime(2027, 7, 20))
+    assert status_of(res, 100430) == "OVERDUE"
+    assert "100431" not in set(res.requirements["bill_id"])
+    assert strikes_for(res, 100430).iloc[0]["fy"] == 27  # C5: counts in the event's FY
+
+
+def test_onedrive_conflict_copy_blocks_writes_and_runs(world):
+    from jfdc.workspace import SyncConflictError
+    world.bill(100440, event_date=EV)
+    world.write_and_run(datetime(2026, 9, 20))
+    (world.ws.root / "ledger" / "decisions-LAPTOP-7F3.jsonl").write_text("{}\n")
+    with pytest.raises(SyncConflictError):
+        rerun(world, datetime(2026, 9, 20))
+    with pytest.raises(SyncConflictError):
+        record_decision(world.ws, world.cfg, "strike_confirm", REVIEWER, bill_id="100440", confirmed_by=CONFIRMER)
