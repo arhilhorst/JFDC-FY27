@@ -21,6 +21,27 @@ from .config import REPO_ROOT
 from .pipeline import RunResult
 
 TEMPLATE = REPO_ROOT / "templates" / "dashboard.html"
+ASSETS = REPO_ROOT / "templates"
+# Fonts (SIL OFL, see templates/fonts/LICENSE-OFL.txt) and logos are inlined as data: URIs so the page
+# stays a single file that loads nothing from the network.
+EMBED = {
+    "__FONT_SERIF_400__": ("fonts/merriweather-latin-400-normal.woff2", "font/woff2"),
+    "__FONT_SERIF_700__": ("fonts/merriweather-latin-700-normal.woff2", "font/woff2"),
+    "__FONT_SANS_400__": ("fonts/roboto-latin-400-normal.woff2", "font/woff2"),
+    "__FONT_SANS_500__": ("fonts/roboto-latin-500-normal.woff2", "font/woff2"),
+    "__FONT_SANS_700__": ("fonts/roboto-latin-700-normal.woff2", "font/woff2"),
+    "__FONT_COND_400__": ("fonts/roboto-condensed-latin-400-normal.woff2", "font/woff2"),
+    "__FONT_COND_700__": ("fonts/roboto-condensed-latin-700-normal.woff2", "font/woff2"),
+    "__IMG_SEAL__": ("assets/sga-seal.png", "image/png"),
+    "__IMG_GT__": ("assets/gt-logo.svg", "image/svg+xml"),
+}
+
+
+def _data_uri(rel: str, mime: str) -> str:
+    raw = (ASSETS / rel).read_bytes()
+    if rel.endswith(".svg"):  # the GT wordmark ships near-black; show it in GT navy
+        raw = raw.replace(b"#231f20", b"#003057")
+    return f"data:{mime};base64,{base64.b64encode(raw).decode()}"
 SOURCE_LABEL = {"engage_line_items": "Engage export", "recap_form": "Recap Form", "bill_details": "Bill details",
                 "jfc_budgets": "FY budgets", "appeals": "Appeal Form"}
 
@@ -93,12 +114,15 @@ def render(payload: dict) -> str:
     data = json.dumps(payload, default=str, ensure_ascii=False)
     # Embedded in a <script> block: neutralize any "</script>" or "<!--" inside student-entered text.
     data = data.replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
-    html = TEMPLATE.read_text().replace("/*__JFDC_DATA__*/null", data, 1)
+    html = TEMPLATE.read_text()
+    for token, (rel, mime) in EMBED.items():
+        html = html.replace(token, _data_uri(rel, mime))
+    html = html.replace("/*__JFDC_DATA__*/null", data, 1)
     # Strict CSP: only THIS page's own script (by hash) may run, and nothing may load from or send to the
     # network. Even if student text ever slipped past the escaping, it could not run or exfiltrate data.
     scripts = re.findall(r"<script>(.*?)</script>", html, flags=re.S)
     hashes = " ".join(f"'sha256-{base64.b64encode(hashlib.sha256(s.encode()).digest()).decode()}'" for s in scripts)
-    csp = (f"default-src 'none'; script-src {hashes}; style-src 'unsafe-inline'; img-src data:; "
+    csp = (f"default-src 'none'; script-src {hashes}; style-src 'unsafe-inline'; img-src data:; font-src data:; "
            "connect-src 'none'; form-action 'none'; base-uri 'none'")
     return html.replace("__JFDC_CSP__", csp, 1)
 

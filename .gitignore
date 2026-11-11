@@ -8,6 +8,7 @@ data/
 *.jsonl
 runs/
 dashboard.html
+!templates/dashboard.html
 jfdc-demo*/
 !tests/fixtures/**
 __pycache__/

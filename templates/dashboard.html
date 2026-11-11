@@ -1,0 +1,737 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="__JFDC_CSP__">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="light">
+<title>JFDC Compliance</title>
+<style>
+/* Fonts are inlined by dashboard.py (SIL OFL): Merriweather for headings, Roboto for data, Roboto Condensed for labels. */
+@font-face { font-family: "Merriweather"; font-weight: 400; font-display: swap; src: url(__FONT_SERIF_400__) format("woff2"); }
+@font-face { font-family: "Merriweather"; font-weight: 700; font-display: swap; src: url(__FONT_SERIF_700__) format("woff2"); }
+@font-face { font-family: "Roboto"; font-weight: 400; font-display: swap; src: url(__FONT_SANS_400__) format("woff2"); }
+@font-face { font-family: "Roboto"; font-weight: 500; font-display: swap; src: url(__FONT_SANS_500__) format("woff2"); }
+@font-face { font-family: "Roboto"; font-weight: 700; font-display: swap; src: url(__FONT_SANS_700__) format("woff2"); }
+@font-face { font-family: "Roboto Condensed"; font-weight: 400; font-display: swap; src: url(__FONT_COND_400__) format("woff2"); }
+@font-face { font-family: "Roboto Condensed"; font-weight: 700; font-display: swap; src: url(__FONT_COND_700__) format("woff2"); }
+
+/* Georgia Tech palette (navy, Tech Gold, Diploma) with muted, print-safe status tones. Light mode only for now. */
+:root {
+  --navy: #003057; --navy-2: #0d406e; --navy-ink: #13324f;
+  --gold: #B3A369; --gold-d: #857437; --gold-l: #ebe4cb; --diploma: #faf7ea;
+  --bg: #f3f2ed; --card: #ffffff; --ink: #1f2a36; --muted: #5f6772; --faint: #8a9099;
+  --line: #dcd9cf; --line-2: #ebe9e2;
+  --red: #a3301e; --red-bg: #f7e5e0; --amber: #7a5b00; --amber-bg: #f5edcc;
+  --green: #2b6a42; --green-bg: #e2eee5; --blue: #2f5597; --blue-bg: #e5ebf6; --grey-bg: #ecebe6;
+  --serif: "Merriweather", Georgia, "Times New Roman", serif;
+  --sans: "Roboto", "Helvetica Neue", Arial, sans-serif;
+  --cond: "Roboto Condensed", "Arial Narrow", "Roboto", sans-serif;
+  --bounce: cubic-bezier(.34, 1.56, .64, 1); --ease: cubic-bezier(.2, .8, .2, 1);
+  --shadow: 0 1px 2px rgba(0, 48, 87, .06), 0 2px 8px -4px rgba(0, 48, 87, .12);
+  --shadow-up: 0 2px 4px rgba(0, 48, 87, .06), 0 14px 28px -12px rgba(0, 48, 87, .32);
+}
+* { box-sizing: border-box; }
+html { background: var(--bg); }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 400 14.5px/1.5 var(--sans);
+  -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+.wrap { max-width: 1200px; margin: 0 auto; padding: 0 16px; }
+a, a:visited { color: var(--navy); text-decoration-color: var(--gold); text-underline-offset: 3px; }
+a:hover { color: var(--gold-d); }
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+button { font: inherit; color: inherit; }
+
+/* ---------- masthead */
+.masthead { background: var(--card); border-bottom: 1px solid var(--line); }
+.mast { display: flex; align-items: center; gap: 16px; padding: 14px 16px; }
+.mast .gt { height: 34px; width: auto; display: block; }
+.mast .vr { width: 1px; align-self: stretch; background: var(--line); margin: 4px 0; }
+.mast .seal { height: 46px; width: 46px; display: block; }
+.titles { min-width: 0; }
+.eyebrow { font: 700 11.5px/1.2 var(--cond); letter-spacing: .12em; text-transform: uppercase; color: var(--gold-d); }
+.title { font: 700 20px/1.25 var(--serif); color: var(--navy); margin-top: 3px; }
+.meta { margin-left: auto; text-align: right; font: 400 13px/1.45 var(--cond); color: var(--muted); letter-spacing: .02em; }
+.meta b { color: var(--navy); font-weight: 700; }
+
+.navbar { position: sticky; top: 0; z-index: 20; background: rgba(0, 48, 87, .96);
+  backdrop-filter: blur(10px) saturate(1.3); -webkit-backdrop-filter: blur(10px) saturate(1.3);
+  border-bottom: 3px solid var(--gold); box-shadow: 0 6px 18px -12px rgba(0, 20, 40, .6); }
+nav { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; }
+nav::-webkit-scrollbar { display: none; }
+nav button { position: relative; background: none; border: 0; color: #c8d3df; padding: 12px 14px 11px; cursor: pointer;
+  font: 700 13.5px/1 var(--cond); letter-spacing: .08em; text-transform: uppercase; white-space: nowrap;
+  transition: color .2s, background-color .2s; }
+nav button::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: 0; height: 3px; background: var(--gold);
+  transform: scaleX(0); transform-origin: center; transition: transform .35s var(--bounce); }
+nav button:hover { color: #fff; background: rgba(255, 255, 255, .06); }
+nav button:hover::after { transform: scaleX(.4); }
+nav button[aria-selected="true"] { color: #fff; }
+nav button[aria-selected="true"]::after { transform: scaleX(1); }
+nav .n { display: inline-block; min-width: 19px; padding: 3px 5px; margin-left: 7px; border-radius: 3px; vertical-align: 1px;
+  background: var(--gold); color: var(--navy); font: 700 11px/1 var(--cond); letter-spacing: 0; text-align: center; }
+
+main.wrap { padding-top: 26px; padding-bottom: 40px; min-height: 60vh; }
+footer { border-top: 1px solid var(--line); color: var(--faint); font: 400 12.5px/1.5 var(--cond); letter-spacing: .03em; }
+footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; padding: 16px; }
+
+/* ---------- type */
+.sechead { margin: 0 0 16px; }
+.sechead .eyebrow { margin-bottom: 4px; }
+h2 { font: 700 23px/1.25 var(--serif); color: var(--navy); margin: 0; }
+h3 { font: 700 16px/1.35 var(--serif); color: var(--navy); }
+.intro { color: var(--muted); margin: 6px 0 0; max-width: 760px; }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+.banner { display: flex; gap: 10px; align-items: center; background: var(--amber-bg); color: var(--amber);
+  border-left: 4px solid var(--gold-d); border-radius: 3px; padding: 10px 14px; margin-bottom: 20px; font-weight: 500; }
+
+/* ---------- glass + motion primitives */
+.lift { position: relative; overflow: hidden; isolation: isolate;
+  transition: transform .4s var(--bounce), box-shadow .3s var(--ease), border-color .2s; }
+.lift::after { content: ""; position: absolute; inset: -1px; z-index: 1; pointer-events: none;
+  background: linear-gradient(115deg, transparent 32%, rgba(255, 255, 255, .7) 46%, rgba(255, 255, 255, .15) 54%, transparent 64%);
+  transform: translateX(-110%); transition: transform .8s var(--ease); }
+.lift:hover { transform: translateY(-3px) scale(1.012); box-shadow: var(--shadow-up); }
+.lift:hover::after { transform: translateX(110%); }
+.lift:active { transform: translateY(-1px) scale(.995); transition-duration: .12s; }
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes drop { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+main.enter > * { animation: rise .45s var(--ease) both; }
+main.enter > *:nth-child(2) { animation-delay: .04s; }
+main.enter .card { animation: rise .5s var(--ease) both; animation-delay: calc(var(--i, 0) * 55ms + 40ms); }
+main.enter tbody tr.row { animation: fade .4s var(--ease) both; animation-delay: calc(var(--i, 12) * 18ms + 80ms); }
+
+/* ---------- overview */
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 26px; }
+.card { display: flex; flex-direction: column; text-align: left; cursor: pointer; padding: 16px 18px 14px;
+  background: linear-gradient(180deg, #fff 0%, #fdfcf8 100%); border: 1px solid var(--line); border-top: 3px solid var(--gold);
+  border-radius: 4px; box-shadow: var(--shadow); }
+.card:hover { border-color: var(--gold); }
+.card .lbl { font: 700 12px/1.2 var(--cond); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.card .num { font: 700 36px/1.1 var(--serif); color: var(--navy); margin: 8px 0 4px; font-variant-numeric: tabular-nums; }
+.card .hint { color: var(--muted); font-size: 13px; flex: 1; }
+.card .go { margin-top: 10px; font: 700 12px/1 var(--cond); letter-spacing: .08em; text-transform: uppercase; color: var(--gold-d); }
+.card .go::after { content: " \2192"; display: inline-block; transition: transform .35s var(--bounce); }
+.card:hover .go::after { transform: translateX(4px); }
+.card.hot { border-top-color: var(--red); }
+.card.hot .num { color: var(--red); }
+.card.zero { border-top-color: var(--line); }
+.card.zero .num { color: var(--faint); }
+
+.grid2 { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.panel { background: var(--card); border: 1px solid var(--line); border-radius: 4px; padding: 18px 20px; box-shadow: var(--shadow); }
+.panel h3 { margin: 0 0 10px; padding-bottom: 10px; border-bottom: 1px solid var(--line-2); }
+.list { list-style: none; margin: 0; padding: 0; }
+.list li { display: flex; justify-content: space-between; align-items: center; gap: 4px 12px; padding: 9px 0;
+  border-top: 1px solid var(--line-2); flex-wrap: wrap; }
+.list li:first-child { border-top: 0; }
+.list a { color: var(--ink); text-decoration: none; font-weight: 500; }
+.list a:hover { color: var(--navy); text-decoration: underline; text-decoration-color: var(--gold); }
+.src dt { font: 700 12px/1.3 var(--cond); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.warns { margin: 12px 0 0; padding: 10px 12px 10px 28px; background: var(--diploma); border-radius: 3px; font-size: 13px; color: var(--muted); }
+
+/* ---------- toolbar + filter menu */
+.toolbar { position: relative; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+.searchbox { position: relative; flex: 1 1 260px; min-width: 0; }
+.searchbox svg { position: absolute; left: 10px; top: 50%; width: 15px; height: 15px; margin-top: -7.5px; color: var(--faint); pointer-events: none; }
+.searchbox input { width: 100%; font: 400 14px/1.2 var(--sans); padding: 9px 12px 9px 32px; border-radius: 4px;
+  border: 1px solid var(--line); background: var(--card); color: var(--ink); transition: border-color .2s, box-shadow .2s; }
+.searchbox input:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(179, 163, 105, .25); }
+.btn { display: inline-flex; align-items: center; gap: 7px; padding: 8px 13px; border-radius: 4px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--card); color: var(--navy);
+  font: 700 13px/1.2 var(--cond); letter-spacing: .07em; text-transform: uppercase;
+  transition: transform .3s var(--bounce), background-color .2s, border-color .2s, box-shadow .2s; }
+.btn:hover { border-color: var(--gold); transform: translateY(-1px); box-shadow: var(--shadow); }
+.btn:active { transform: scale(.96); }
+.btn svg { width: 14px; height: 14px; transition: transform .4s var(--bounce); }
+.btn[aria-expanded="true"] { background: var(--navy); border-color: var(--navy); color: #fff; }
+.btn[aria-expanded="true"] svg { transform: rotate(180deg); }
+.btn .n { min-width: 18px; padding: 2px 5px; border-radius: 3px; background: var(--gold); color: var(--navy); font-size: 11px; letter-spacing: 0; text-align: center; }
+.btn.primary { background: var(--navy); border-color: var(--navy); color: #fff; }
+.btn.ghost { border-color: transparent; background: none; color: var(--gold-d); padding-left: 8px; padding-right: 8px; }
+.btn.ghost:hover { box-shadow: none; background: var(--diploma); }
+.count { margin-left: auto; white-space: nowrap; font: 400 13px/1.2 var(--cond); letter-spacing: .03em; color: var(--muted); }
+.count b { color: var(--navy); font-weight: 700; }
+.tokens { display: flex; gap: 6px; flex-wrap: wrap; }
+.token { display: inline-flex; align-items: center; gap: 6px; padding: 5px 6px 5px 10px; border-radius: 3px; cursor: pointer;
+  background: var(--diploma); border: 1px solid var(--gold-l); color: var(--navy-ink); font-size: 12.5px;
+  animation: drop .3s var(--bounce) both; transition: background-color .2s, transform .25s var(--bounce); }
+.token span { color: var(--gold-d); font: 700 11px/1 var(--cond); letter-spacing: .06em; text-transform: uppercase; }
+.token i { font-style: normal; width: 16px; height: 16px; line-height: 15px; text-align: center; border-radius: 2px; color: var(--muted); }
+.token:hover { background: var(--gold-l); transform: translateY(-1px); }
+.token:hover i { background: rgba(0, 48, 87, .1); color: var(--navy); }
+
+.fpanel { position: absolute; z-index: 15; top: calc(100% + 8px); left: 0; width: min(680px, 100%); max-height: min(70vh, 560px);
+  display: flex; flex-direction: column; border-radius: 6px; overflow: hidden;
+  background: rgba(255, 255, 255, .8); backdrop-filter: blur(16px) saturate(1.5); -webkit-backdrop-filter: blur(16px) saturate(1.5);
+  border: 1px solid rgba(0, 48, 87, .14); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .9), 0 24px 48px -16px rgba(0, 30, 60, .38);
+  opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(-8px) scale(.98); transform-origin: top left;
+  transition: opacity .2s var(--ease), transform .4s var(--bounce), visibility 0s linear .4s; }
+.fpanel.open { opacity: 1; visibility: visible; pointer-events: auto; transform: none;
+  transition: opacity .22s var(--ease), transform .45s var(--bounce), visibility 0s; }
+.fpanel::before { content: ""; position: absolute; inset: 0 0 auto; height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-l), var(--gold)); }
+.fhead, .ffoot { display: flex; align-items: center; gap: 10px; padding: 14px 18px 10px; }
+.fhead { border-bottom: 1px solid rgba(0, 48, 87, .08); }
+.fhead .ftitle { font: 700 16px/1.2 var(--serif); color: var(--navy); }
+.fhead .btn { margin-left: auto; }
+.fbody { overflow-y: auto; padding: 4px 18px 6px; }
+.ffoot { border-top: 1px solid rgba(0, 48, 87, .08); padding: 10px 18px 12px; justify-content: space-between; }
+.fgroup { padding: 12px 0; border-top: 1px solid rgba(0, 48, 87, .06); }
+.fgroup:first-child { border-top: 0; }
+.flabel { font: 700 11.5px/1.2 var(--cond); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.fpanel.anim .fgroup { animation: rise .4s var(--ease) both; animation-delay: calc(var(--i, 0) * 45ms + 60ms); }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px 6px 8px; border-radius: 3px; cursor: pointer;
+  border: 1px solid var(--line); background: rgba(255, 255, 255, .85); color: var(--ink); font-size: 13px;
+  transition: transform .3s var(--bounce), background-color .2s, border-color .2s, color .2s; }
+.chip:hover { border-color: var(--gold); transform: translateY(-1px); }
+.chip:active { transform: scale(.95); }
+.chip .tick { width: 14px; height: 14px; border-radius: 2px; border: 1.5px solid var(--faint); position: relative; flex: none;
+  transition: background-color .2s, border-color .2s; }
+.chip .tick::after { content: ""; position: absolute; left: 3.5px; top: .5px; width: 4px; height: 8px; border: solid #fff;
+  border-width: 0 2px 2px 0; transform: rotate(45deg) scale(0); transition: transform .3s var(--bounce); }
+.chip[aria-pressed="true"] { background: var(--navy); border-color: var(--navy); color: #fff; }
+.chip[aria-pressed="true"] .tick { background: var(--gold); border-color: var(--gold); }
+.chip[aria-pressed="true"] .tick::after { transform: rotate(45deg) scale(1); }
+.chip .c { font: 700 11.5px/1 var(--cond); color: var(--faint); font-variant-numeric: tabular-nums; }
+.chip[aria-pressed="true"] .c { color: var(--gold-l); }
+.chip.none { opacity: .45; }
+.fselect { width: 100%; max-width: 420px; font: 400 14px/1.2 var(--sans); padding: 8px 10px; border-radius: 4px;
+  border: 1px solid var(--line); background: #fff; color: var(--ink); }
+
+/* ---------- table */
+.tablewrap { background: var(--card); border: 1px solid var(--line); border-radius: 4px; overflow-x: auto; box-shadow: var(--shadow); }
+table { width: 100%; border-collapse: collapse; font: 400 14px/1.45 var(--sans); font-variant-numeric: tabular-nums; }
+th { text-align: left; padding: 11px 14px 10px; white-space: nowrap; cursor: pointer; user-select: none;
+  background: #f8f7f3; border-bottom: 1px solid var(--line); color: var(--navy-ink);
+  font: 700 12px/1.2 var(--cond); letter-spacing: .08em; text-transform: uppercase; transition: color .2s, background-color .2s; }
+th:hover { background: var(--diploma); color: var(--gold-d); }
+th::after { content: ""; display: inline-block; width: 0; height: 0; margin-left: 6px; vertical-align: 2px;
+  border: 4px solid transparent; border-top-color: currentColor; opacity: 0; transition: opacity .2s, transform .3s var(--bounce); }
+th:hover::after { opacity: .35; }
+th[aria-sort]::after { opacity: 1; border-top-color: var(--gold-d); }
+th[aria-sort="ascending"]::after { transform: translateY(-3px) rotate(180deg); }
+th.num { text-align: right; }
+td { padding: 11px 14px; border-top: 1px solid var(--line-2); vertical-align: top; }
+tbody tr:first-child td { border-top: 0; }
+tbody tr.row { cursor: pointer; transition: background-color .18s; }
+tbody tr.row td:first-child { box-shadow: inset 0 0 0 var(--gold); transition: box-shadow .25s var(--ease); font-weight: 500; color: var(--navy-ink); }
+tbody tr.row:hover { background: var(--diploma); }
+tbody tr.row:hover td:first-child, tbody tr.row[aria-expanded="true"] td:first-child { box-shadow: inset 3px 0 0 var(--gold); }
+tbody tr.row[aria-expanded="true"] { background: var(--diploma); }
+tbody tr.row:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+td.num { text-align: right; }
+td .t { color: var(--muted); font-size: 12.5px; display: block; max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+tr.detail td { background: #fbfaf5; padding: 0; border-top: 0; }
+tr.detail .reveal { padding: 14px 18px 18px 22px; border-left: 3px solid var(--gold); animation: drop .32s var(--ease) both; }
+tr.detail.closing .reveal { animation: drop .18s var(--ease) reverse both; }
+dl { display: grid; grid-template-columns: max-content 1fr; gap: 7px 18px; margin: 0; font-size: 13.5px; }
+dt { font: 700 11.5px/1.7 var(--cond); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+dd { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+.cmd { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 6px; }
+.cmd code { flex: 1; font: 12.5px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; background: #f1efe7; color: var(--navy-ink);
+  border: 1px solid var(--line-2); padding: 7px 9px; border-radius: 3px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.cmd .btn { padding: 6px 10px; font-size: 11.5px; }
+.empty { padding: 34px 16px; text-align: center; color: var(--muted); font-family: var(--serif); font-size: 14px; }
+.more { padding: 12px 16px; text-align: center; color: var(--muted); font-size: 13px; border-top: 1px solid var(--line-2); }
+
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px 3px 7px; border-radius: 3px; white-space: nowrap;
+  font: 700 11.5px/1.2 var(--cond); letter-spacing: .06em; text-transform: uppercase; background: var(--grey-bg); color: var(--muted); }
+.pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .85; }
+.p-red { background: var(--red-bg); color: var(--red); }
+.p-amber { background: var(--amber-bg); color: var(--amber); }
+.p-green { background: var(--green-bg); color: var(--green); }
+.p-blue { background: var(--blue-bg); color: var(--blue); }
+.p-plain::before { display: none; }
+
+/* ---------- guide */
+.guide { max-width: 780px; }
+.guide .panel { margin-bottom: 14px; }
+.guide h3 { margin: 0 0 8px; }
+.guide ol, .guide ul { padding-left: 20px; margin: 6px 0; }
+.guide li { margin: 4px 0; }
+.gloss { display: grid; grid-template-columns: max-content 1fr; gap: 10px 16px; align-items: baseline; }
+
+@media (max-width: 860px) { .grid2 { grid-template-columns: 1fr; } }
+@media (max-width: 640px) {
+  .mast { gap: 12px; padding: 12px 16px; flex-wrap: wrap; }
+  .mast .gt { height: 26px; }
+  .mast .seal { height: 38px; width: 38px; }
+  .title { font-size: 17px; }
+  .meta { margin-left: 0; text-align: left; width: 100%; }
+  nav button { padding: 11px 10px 10px; letter-spacing: .05em; }
+  h2 { font-size: 20px; }
+  .cards { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .card { padding: 12px 12px 10px; }
+  .card .num { font-size: 26px; }
+  .card .hint { display: none; }
+  .opt { display: none; }
+  td .t { max-width: 170px; }
+  td, th { padding-left: 10px; padding-right: 10px; }
+  .count { margin-left: 0; width: 100%; }
+  .fpanel { max-height: 72vh; }
+  dl { grid-template-columns: 1fr; gap: 2px; }
+  dd { margin-bottom: 6px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+<header class="masthead">
+  <div class="wrap mast">
+    <img class="gt" src="__IMG_GT__" alt="Georgia Tech" width="80" height="34">
+    <span class="vr" aria-hidden="true"></span>
+    <img class="seal" src="__IMG_SEAL__" alt="Student Government Association seal" width="46" height="46">
+    <div class="titles">
+      <div class="eyebrow">Student Government Association</div>
+      <div class="title">Joint Finance Data Committee</div>
+    </div>
+    <div class="meta" id="sub"></div>
+  </div>
+</header>
+<div class="navbar"><div class="wrap"><nav id="tabs" role="tablist" aria-label="Sections"></nav></div></div>
+<main class="wrap" id="main"></main>
+<footer><div class="wrap"><span>SGA Joint Finance Data Committee · Recap compliance under SAF Policy §9.5</span>
+  <span>Contains student data. Keep inside the JFDC folder.</span></div></footer>
+
+<script id="jfdc-data" type="application/json">/*__JFDC_DATA__*/null</script>
+<script>
+"use strict";
+const D = JSON.parse(document.getElementById("jfdc-data").textContent);
+
+// ---------- helpers (all data goes in via textContent: student-typed text never becomes HTML)
+function el(tag, attrs, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (v == null || v === false) continue;
+    if (k === "class") e.className = v;
+    else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+    else e.setAttribute(k, v === true ? "" : v);
+  }
+  for (const k of kids.flat()) if (k != null && k !== "") e.append(k instanceof Node ? k : String(k));
+  return e;
+}
+const SVGNS = "http://www.w3.org/2000/svg";
+function icon(d) {  // fixed icon paths from this file only
+  const s = document.createElementNS(SVGNS, "svg");
+  s.setAttribute("viewBox", "0 0 16 16"); s.setAttribute("fill", "none"); s.setAttribute("aria-hidden", "true");
+  const p = document.createElementNS(SVGNS, "path");
+  p.setAttribute("d", d); p.setAttribute("stroke", "currentColor"); p.setAttribute("stroke-width", "1.6");
+  p.setAttribute("stroke-linecap", "round"); p.setAttribute("stroke-linejoin", "round");
+  s.append(p); return s;
+}
+const I_SEARCH = "M7 12.5a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11ZM11 11l3.5 3.5";
+const I_FILTER = "M2 3.5h12M4.5 8h7M7 12.5h2";
+const blank = v => v == null || v === "";
+const money = v => blank(v) ? "" : "$" + Number(v).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+const plural = (n, w) => `${Number(n).toLocaleString()} ${w}${n === 1 ? "" : "s"}`;
+const list = v => blank(v) ? [] : String(v).split(",");
+
+const PILL = {
+  OVERDUE: "p-red", LATE: "p-red", NOT_TRACKED: "p-red", INCOMPLETE: "p-amber", NEEDS_REVIEW: "p-amber",
+  DUE: "p-blue", UPCOMING: "", COMPLIANT: "p-green", EXEMPT: "", NO_EVENT_DATE: "", BASIS_MISSING: "p-amber",
+  proposed: "p-amber", confirmed: "p-red", waived: "", removed: "p-green",
+  OPEN: "p-amber", GRANTED: "p-green", DENIED: "",
+  high: "p-red", warn: "p-amber", info: "p-blue",
+};
+const LABEL = {
+  OVERDUE: "Overdue", LATE: "Late", NOT_TRACKED: "Not tracked", INCOMPLETE: "Incomplete", NEEDS_REVIEW: "Needs review",
+  DUE: "Due", UPCOMING: "Upcoming", COMPLIANT: "Compliant", EXEMPT: "Exempt", NO_EVENT_DATE: "No event date",
+  BASIS_MISSING: "Basis missing", proposed: "To confirm", confirmed: "Confirmed", waived: "Waived", removed: "Removed",
+  OPEN: "Open", GRANTED: "Granted", DENIED: "Denied", high: "High", warn: "Warning", info: "Info",
+};
+const pill = v => blank(v) ? "" : el("span", {class: "pill " + (PILL[v] || "")}, LABEL[v] || v);
+const standingPill = s => blank(s) ? "" :
+  el("span", {class: "pill " + (s === "GOOD" ? "p-green" : s.startsWith("STRIKE 1") ? "p-amber" : "p-red")},
+     s === "GOOD" ? "Good standing" : s.replace(/^STRIKE (\d):\s*/, "Strike $1: ").toLowerCase().replace(/^s/, "S")
+       .replace("supp-ineligible", "no supplemental bills"));
+const standingGroup = s => { const m = /^STRIKE (\d)/.exec(s || ""); return m ? "Strike " + m[1] : "Good standing"; };
+
+function command(text) {
+  const btn = el("button", {class: "btn", type: "button", onclick: async (e) => {
+    e.stopPropagation();
+    try { await navigator.clipboard.writeText(text); btn.textContent = "Copied"; }
+    catch { const r = document.createRange(); r.selectNodeContents(code); getSelection().removeAllRanges(); getSelection().addRange(r); btn.textContent = "Selected"; }
+    setTimeout(() => btn.textContent = "Copy", 1500);
+  }}, "Copy");
+  const code = el("code", {}, text);
+  return el("div", {class: "cmd"}, code, btn);
+}
+const sechead = (eyebrow, title, intro) => el("div", {class: "sechead"}, el("div", {class: "eyebrow"}, eyebrow),
+  el("h2", {}, title), intro ? el("p", {class: "intro"}, intro) : "");
+
+// ---------- state in the URL hash, so links from Overview land pre-filtered and back/forward works
+const ui = {open: null, lastTab: null};
+function readHash() {
+  const p = new URLSearchParams(location.hash.slice(1));
+  return {tab: p.get("tab") || "overview", f: Object.fromEntries([...p].filter(([k]) => k !== "tab"))};
+}
+function go(tab, f) { location.hash = new URLSearchParams({tab, ...(f || {})}).toString(); }
+function replaceFilters(tab, f) {
+  history.replaceState(null, "", "#" + new URLSearchParams({tab, ...f}).toString());
+  render();
+}
+function setFilter(tab, key, val) {
+  const {f} = readHash();
+  if (blank(val)) delete f[key]; else f[key] = val;
+  replaceFilters(tab, f);
+}
+function toggleValue(tab, key, v) {
+  const cur = list(readHash().f[key]);
+  setFilter(tab, key, (cur.includes(v) ? cur.filter(x => x !== v) : [...cur, v]).join(","));
+}
+
+// ---------- filter menu open/close (class toggles so the CSS transition plays; re-renders keep it open)
+function setMenu(open, refocus) {
+  const p = document.getElementById("fpanel"), b = document.getElementById("fbtn");
+  if (!p || !b) { ui.open = null; return; }
+  ui.open = open ? readHash().tab : null;
+  p.classList.toggle("open", open); p.classList.toggle("anim", open);
+  b.setAttribute("aria-expanded", String(open));
+  if (open) setTimeout(() => p.querySelector(".chip, select")?.focus({preventScroll: true}), 60);
+  else if (refocus) b.focus();
+}
+document.addEventListener("pointerdown", e => {
+  if (ui.open && !e.target.closest("#fpanel, #fbtn")) setMenu(false);
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape" && ui.open) setMenu(false, true); });
+
+// ---------- generic filterable, sortable table with a faceted filter menu
+// facet: {key, label, get?(row) -> value, order?, labels?, select?}. facets[0] is the main one Overview links to.
+function tableView(spec, rows) {
+  const {f} = readHash();
+  const q = (f.q || "").trim().toLowerCase();
+  const sortKey = f.sort || spec.sort?.[0];
+  const sortDir = f.dir || spec.sort?.[1] || "asc";
+  const facets = [...spec.facets, ...(spec.rsoFilter ? [{key: "rso", label: "RSO", select: true}] : [])];
+  const valOf = (fc, r) => { const v = fc.get ? fc.get(r) : r[fc.key]; return blank(v) ? "" : String(v); };
+  const labelOf = (fc, v) => fc.labels?.[v] ?? LABEL[v] ?? (v.charAt(0).toUpperCase() + v.slice(1));
+  const picked = Object.fromEntries(facets.map(fc => [fc.key, list(f[fc.key])]));
+  const passes = (r, skip) => facets.every(fc => fc.key === skip || !picked[fc.key].length || picked[fc.key].includes(valOf(fc, r)));
+
+  const base = rows.filter(r => !q || spec.search.some(k => String(r[k] ?? "").toLowerCase().includes(q)));
+  let shown = base.filter(r => passes(r));
+  if (sortKey) {
+    const col = spec.columns.find(c => c.k === sortKey);
+    const key = col?.sortBy || (r => r[sortKey]);
+    shown = [...shown].sort((a, b) => {
+      const x = key(a), y = key(b);
+      if (blank(x) && blank(y)) return 0; if (blank(x)) return 1; if (blank(y)) return -1;
+      const c = (typeof x === "number" && typeof y === "number") ? x - y : String(x).localeCompare(String(y), undefined, {numeric: true});
+      return sortDir === "desc" ? -c : c;
+    });
+  }
+
+  // search
+  const search = el("input", {type: "search", placeholder: spec.placeholder || "Search", value: f.q || "",
+    "aria-label": "Search", "data-fk": "q"});
+  search.addEventListener("input", () => {
+    clearTimeout(search._t);
+    search._t = setTimeout(() => setFilter(spec.tab, "q", search.value), 180);
+  });
+
+  // filter menu
+  const active = facets.reduce((n, fc) => n + picked[fc.key].length, 0);
+  const groups = facets.map((fc, i) => {
+    const counts = {};
+    base.filter(r => passes(r, fc.key)).forEach(r => { const v = valOf(fc, r); if (v) counts[v] = (counts[v] || 0) + 1; });
+    const values = [...new Set([...(fc.order || []), ...Object.keys(counts).sort((a, b) => a.localeCompare(b)), ...picked[fc.key]])]
+      .filter(v => counts[v] || picked[fc.key].includes(v));
+    let control;
+    if (fc.select) {
+      control = el("select", {class: "fselect", "aria-label": fc.label, "data-fk": "sel-" + fc.key,
+        onchange: e => setFilter(spec.tab, fc.key, e.target.value)},
+        el("option", {value: ""}, `All ${fc.label}s (${values.length})`),
+        values.map(v => el("option", {value: v, selected: picked[fc.key].includes(v)}, `${labelOf(fc, v)}  (${counts[v] || 0})`)));
+    } else {
+      control = el("div", {class: "chips", role: "group", "aria-label": fc.label}, values.map(v => el("button", {
+        class: "chip" + (counts[v] ? "" : " none"), type: "button", "aria-pressed": String(picked[fc.key].includes(v)),
+        "data-fk": `chip-${fc.key}-${v}`, onclick: () => toggleValue(spec.tab, fc.key, v)},
+        el("span", {class: "tick"}), labelOf(fc, v), el("span", {class: "c"}, counts[v] || 0))));
+    }
+    return el("div", {class: "fgroup", style: `--i:${i}`}, el("div", {class: "flabel"}, fc.label), values.length ? control
+      : el("span", {class: "muted small"}, "Nothing to filter on."));
+  });
+  const clearAll = () => { const g = readHash().f; facets.forEach(fc => delete g[fc.key]); delete g.q; replaceFilters(spec.tab, g); };
+  const panel = el("div", {class: "fpanel" + (ui.open === spec.tab ? " open" : ""), id: "fpanel", role: "dialog", "aria-label": "Filters"},
+    el("div", {class: "fhead"}, el("span", {class: "ftitle"}, `Filter ${spec.noun}s`),
+      active ? el("button", {class: "btn ghost", type: "button", "data-fk": "fclear", onclick: clearAll}, "Clear all") : ""),
+    el("div", {class: "fbody"}, groups),
+    el("div", {class: "ffoot"}, el("span", {class: "count"}, el("b", {}, shown.length.toLocaleString()), ` of ${plural(rows.length, spec.noun)}`),
+      el("button", {class: "btn primary", type: "button", onclick: () => setMenu(false, true)}, "Done")));
+  const fbtn = el("button", {class: "btn", type: "button", id: "fbtn", "aria-expanded": String(ui.open === spec.tab),
+    "aria-controls": "fpanel", "data-fk": "fbtn", onclick: () => setMenu(ui.open !== spec.tab)},
+    icon(I_FILTER), "Filters", active ? el("span", {class: "n"}, active) : "");
+
+  const tokens = el("div", {class: "tokens"}, facets.flatMap(fc => picked[fc.key].map(v => el("button", {class: "token", type: "button",
+    title: "Remove filter", onclick: () => toggleValue(spec.tab, fc.key, v)}, el("span", {}, fc.label), labelOf(fc, v), el("i", {}, "×")))));
+  const bar = el("div", {class: "toolbar"},
+    el("div", {class: "searchbox"}, icon(I_SEARCH), search), fbtn, tokens,
+    el("span", {class: "count"}, shown.length === rows.length ? plural(rows.length, spec.noun)
+      : [el("b", {}, shown.length.toLocaleString()), ` of ${plural(rows.length, spec.noun)}`]),
+    panel);
+
+  // table
+  const head = el("tr", {}, spec.columns.map(c => el("th", {class: [c.num ? "num" : "", c.opt ? "opt" : ""].join(" ").trim() || null, scope: "col",
+    "aria-sort": sortKey === c.k ? (sortDir === "asc" ? "ascending" : "descending") : null,
+    onclick: () => { const {f} = readHash(); f.dir = f.sort === c.k && (f.dir || "asc") === "asc" ? "desc" : "asc"; f.sort = c.k;
+      replaceFilters(spec.tab, f); }},
+    c.label)));
+  const body = el("tbody");
+  const LIMIT = 300;
+  shown.slice(0, LIMIT).forEach((r, i) => {
+    const tr = el("tr", {class: "row", tabindex: "0", "aria-expanded": "false", style: i < 14 ? `--i:${i}` : null},
+      spec.columns.map(c => el("td", {class: [c.num ? "num" : "", c.opt ? "opt" : ""].join(" ").trim() || null},
+        c.fmt ? c.fmt(r) : (r[c.k] ?? ""))));
+    const toggle = () => {
+      const next = tr.nextSibling;
+      if (next?.classList?.contains("detail") && !next.classList.contains("closing")) {
+        next.classList.add("closing"); tr.setAttribute("aria-expanded", "false");
+        setTimeout(() => next.remove(), 170); return;
+      }
+      if (next?.classList?.contains("closing")) next.remove();
+      tr.setAttribute("aria-expanded", "true");
+      const dl = el("dl");
+      spec.details.forEach(([k, label, fmt]) => {
+        const v = fmt ? fmt(r) : r[k];
+        if (blank(v) || v === false && k !== "timely") return;
+        dl.append(el("dt", {}, label), el("dd", {}, v));
+      });
+      tr.after(el("tr", {class: "detail"}, el("td", {colspan: spec.columns.length}, el("div", {class: "reveal"}, dl))));
+    };
+    tr.addEventListener("click", () => { if (!getSelection().toString()) toggle(); });
+    tr.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } });
+    body.append(tr);
+  });
+  const table = shown.length
+    ? el("div", {class: "tablewrap"}, el("table", {}, el("thead", {}, head), body),
+        shown.length > LIMIT ? el("div", {class: "more"}, `Showing the first ${LIMIT}. Narrow the search or filters to see the rest.`) : "")
+    : el("div", {class: "tablewrap"}, el("div", {class: "empty"}, rows.length ? "Nothing matches these filters." : spec.emptyText));
+  return el("section", {}, sechead(spec.eyebrow || D.meta.fy, spec.title, spec.intro), bar, table);
+}
+
+// ---------- tab definitions
+const C = D.counts;
+const TABS = [
+  {id: "overview", label: "Overview", view: overview},
+  {id: "rsos", label: "RSOs", view: () => tableView({
+    tab: "rsos", title: "Registered student organizations", eyebrow: `${D.meta.fy} · Standing`, noun: "RSO", placeholder: "Search RSOs",
+    search: ["rso"], sort: ["rso", "asc"], emptyText: "No RSOs with event bills yet.",
+    facets: [
+      {key: "standing", label: "Standing", get: r => standingGroup(r.standing), order: ["Good standing", "Strike 1", "Strike 2", "Strike 3"]},
+      {key: "overdue_any", label: "Overdue recaps", get: r => r.overdue > 0 ? "yes" : "no", order: ["yes", "no"],
+        labels: {yes: "Has overdue recaps", no: "Nothing overdue"}},
+      {key: "review_any", label: "Review", get: r => r.needs_review > 0 ? "yes" : "no", order: ["yes", "no"],
+        labels: {yes: "Has items to review", no: "Nothing to review"}},
+    ],
+    columns: [
+      {k: "rso", label: "RSO"},
+      {k: "standing", label: "Standing", fmt: r => standingPill(r.standing)},
+      {k: "overdue", label: "Overdue", num: true},
+      {k: "proposed_strikes", label: "To confirm", num: true, opt: true},
+      {k: "needs_review", label: "Review", num: true, opt: true},
+      {k: "compliant", label: "Compliant", num: true, opt: true},
+    ],
+    details: [["standing", "Standing"], ["confirmed_strikes", "Confirmed strikes"], ["late", "Late recaps"],
+      ["due", "Recaps due now"], ["unverified_no_event_date", "Bills with no event date"],
+      ["rso", "", r => el("a", {href: "#" + new URLSearchParams({tab: "bills", rso: r.rso})}, "See this RSO's bills →")]],
+  }, D.rsos)},
+  {id: "bills", label: "Bills", view: () => tableView({
+    tab: "bills", title: "Event bills", eyebrow: `${D.meta.fy} · Recaps`, noun: "bill", placeholder: "Search bill #, RSO, title or submitter",
+    search: ["bill_id", "rso", "title", "submitter_name", "submitter_email"], rsoFilter: true,
+    sort: ["status_rank", "asc"], emptyText: "No in-scope event bills.",
+    facets: [
+      {key: "status", label: "Status", order: ["OVERDUE", "LATE", "NOT_TRACKED", "INCOMPLETE", "NEEDS_REVIEW", "DUE",
+        "UPCOMING", "COMPLIANT", "NO_EVENT_DATE", "EXEMPT"]},
+      {key: "class", label: "Enforcement", order: ["ENFORCED"], labels: {ENFORCED: "Can lead to a strike", COMPLETENESS: "Completeness only"}},
+      {key: "recap", label: "Recap", get: r => blank(r.recap_submitted_at) ? "none" : "filed", order: ["filed", "none"],
+        labels: {filed: "Recap filed", none: "No recap yet"}},
+      {key: "date_src", label: "Event date from", get: r => r.event_date_source},
+    ],
+    columns: [
+      {k: "bill_id", label: "Bill"},
+      {k: "rso", label: "RSO", fmt: r => el("span", {}, r.rso, el("span", {class: "t"}, r.title))},
+      {k: "status_rank", label: "Status", fmt: r => pill(r.status), sortBy: r => STATUS_RANK[r.status] ?? 99},
+      {k: "due_date", label: "Recap due", opt: true},
+      {k: "days_overdue", label: "Days over", num: true, opt: true},
+      {k: "amount", label: "Approved", num: true, fmt: r => money(r.amount), opt: true},
+    ],
+    details: [["title", "Title"], ["event_date", "Event date", r => blank(r.event_date) ? "" : `${r.event_date} (from ${r.event_date_source})`],
+      ["due_date", "Recap due"], ["recap_submitted_at", "Recap filed"], ["days_left", "Days left"],
+      ["class", "Enforcement", r => r.class === "ENFORCED" ? "Can lead to a strike" : `Completeness only${r.class_note ? " (" + r.class_note + ")" : ""}`],
+      ["submitter_name", "Submitted by", r => [r.submitter_name, r.submitter_email].filter(Boolean).join(", ")],
+      ["recap_ids", "Recap response(s)"], ["notes", "Notes"]],
+  }, D.bills)},
+  {id: "strikes", label: "Strikes", badge: C.strikes_to_confirm, view: () => tableView({
+    tab: "strikes", title: "Strikes", eyebrow: `${D.meta.fy} · Enforcement`, noun: "strike", placeholder: "Search bill # or RSO",
+    intro: "Strikes count only once a confirmer signs off. Confirm, waive or remove them on the Strike Confirmation sheet of the Excel report.",
+    search: ["bill_id", "rso", "title"], rsoFilter: true, sort: ["rso", "asc"],
+    emptyText: "No strikes this year.",
+    facets: [
+      {key: "state", label: "State", order: ["proposed", "confirmed", "waived", "removed"]},
+      {key: "ordinal", label: "Strike number", get: r => blank(r.ordinal) ? "" : "Strike " + r.ordinal},
+      {key: "status", label: "Reason"},
+    ],
+    columns: [
+      {k: "bill_id", label: "Bill"},
+      {k: "rso", label: "RSO"},
+      {k: "state", label: "State", fmt: r => el("span", {}, pill(r.state), r.supported === false ? el("span", {class: "t"}, "removal proposed") : "")},
+      {k: "ordinal", label: "Strike #", num: true},
+      {k: "status", label: "Reason", fmt: r => pill(r.status), opt: true},
+    ],
+    details: [["title", "Title"], ["event_date", "Event date"], ["due_date", "Recap due"], ["recap_submitted_at", "Recap filed"],
+      ["consequence", "Consequence"], ["active_until", "Active until"], ["decided_by", "Decided by"],
+      ["decision_reason", "Decision reason"], ["note", "Note"]],
+  }, D.strikes)},
+  {id: "appeals", label: "Appeals", badge: C.appeals_open, view: () => tableView({
+    tab: "appeals", title: "Appeals", eyebrow: `${D.meta.fy} · Admin decisions`, noun: "appeal", placeholder: "Search appeal #, bill #, RSO or name",
+    intro: "Every appeal is reviewed by an admin. An open appeal does not pause the strike.",
+    search: ["appeal_id", "bill_id", "rso", "appellant_name", "appellant_email", "reason"], rsoFilter: true,
+    sort: ["submitted_at", "asc"], emptyText: "No appeals have been filed.",
+    facets: [
+      {key: "status", label: "Status", order: ["OPEN", "GRANTED", "DENIED"]},
+      {key: "timely", label: "Filed", get: r => r.timely === false ? "late" : "on time", order: ["on time", "late"],
+        labels: {"on time": "Within 30 days", late: "After 30 days"}},
+      {key: "reason", label: "Reason"},
+    ],
+    columns: [
+      {k: "appeal_id", label: "#"},
+      {k: "bill_id", label: "Bill"},
+      {k: "rso", label: "RSO", fmt: r => el("span", {}, r.rso, el("span", {class: "t"}, r.reason))},
+      {k: "status", label: "Status", fmt: r => el("span", {}, pill(r.status), r.timely === false ? el("span", {class: "t"}, "filed late") : "")},
+      {k: "appeal_deadline", label: "Deadline", opt: true},
+    ],
+    details: [["appellant_name", "Filed by", r => [r.appellant_name, r.appellant_email].filter(Boolean).join(", ")],
+      ["submitted_at", "Filed"], ["reason", "Reason"], ["explanation", "Explanation"], ["evidence", "Evidence"],
+      ["checks", "Check"], ["strike_state", "Strike now"], ["decided_by", "Decided by"], ["decision_reason", "Decision"],
+      ["action", "Decide with", r => blank(r.action) ? "" : el("div", {}, r.action.split("  |  ").map(command))]],
+  }, D.appeals)},
+  {id: "review", label: "To review", badge: C.review, view: reviewView},
+  {id: "guide", label: "Guide", view: guide},
+];
+const STATUS_RANK = Object.fromEntries(["OVERDUE", "LATE", "NOT_TRACKED", "INCOMPLETE", "NEEDS_REVIEW", "DUE", "UPCOMING",
+  "NO_EVENT_DATE", "COMPLIANT", "EXEMPT"].map((s, i) => [s, i]));
+D.bills.forEach(r => r.status_rank = r.status);
+
+// ---------- overview
+function overview() {
+  let i = 0;
+  const card = (n, label, hint, tab, f, hot) => el("button", {class: "card lift" + (n ? (hot ? " hot" : "") : " zero"), type: "button",
+    style: `--i:${i++}`, onclick: () => go(tab, f)},
+    el("div", {class: "lbl"}, label), el("div", {class: "num"}, n), el("div", {class: "hint"}, hint), el("div", {class: "go"}, "Open"));
+  const cards = el("div", {class: "cards"},
+    card(C.strikes_to_confirm, "Strikes to confirm", "Need a confirmer's decision", "strikes", {state: "proposed"}, true),
+    card(C.appeals_open, "Open appeals", "Waiting on an admin", "appeals", {status: "OPEN"}, true),
+    card(C.review, "Items to review", "Matches, names and dates to check", "review", {}),
+    card(C.overdue, "Overdue recaps", "On bills that can lead to a strike", "bills", {status: "OVERDUE"}));
+
+  const attention = D.rsos.filter(r => r.standing !== "GOOD" || r.overdue > 0)
+    .sort((a, b) => (b.standing !== "GOOD") - (a.standing !== "GOOD") || b.overdue - a.overdue).slice(0, 10);
+  const rsoPanel = el("div", {class: "panel"}, el("h3", {}, "RSOs needing attention"),
+    attention.length ? el("ul", {class: "list"}, attention.map(r => el("li", {},
+      el("a", {href: "#" + new URLSearchParams({tab: "bills", rso: r.rso})}, r.rso),
+      el("span", {}, r.overdue ? el("span", {class: "muted small"}, `${plural(r.overdue, "overdue recap")}  `) : "", standingPill(r.standing)))))
+      : el("p", {class: "muted"}, "Every RSO is in good standing with nothing overdue."),
+    D.rsos.length > attention.length && attention.length ? el("p", {class: "small", style: "margin:12px 0 0"}, el("a", {href: "#tab=rsos"}, "All RSOs →")) : "");
+
+  const dataPanel = el("div", {class: "panel"}, el("h3", {}, "Data sources"),
+    el("p", {class: "small muted", style: "margin:0 0 6px"}, `As of ${D.meta.as_of} · ${plural(D.meta.inputs.length, "file")}`),
+    el("ul", {class: "list small"}, D.meta.inputs.map(x => el("li", {}, el("b", {}, x.source),
+      el("span", {class: "muted", style: "overflow-wrap:anywhere"}, x.as_of)))),
+    D.meta.warnings.length ? el("details", {}, el("summary", {class: "small muted", style: "cursor:pointer;margin-top:10px"},
+      plural(D.meta.warnings.length, "warning")), el("ul", {class: "warns"}, D.meta.warnings.map(w => el("li", {}, w)))) : "");
+  return el("section", {}, sechead(`${D.meta.fy} · Today`, "What needs action"), cards, el("div", {class: "grid2"}, rsoPanel, dataPanel));
+}
+
+// ---------- review (review queue + flags + data quality in one place)
+function reviewView() {
+  const KIND = {RSO_ALIAS: "RSO name", LINK_EXACT: "Recap match", LINK_FALLBACK: "Recap match", ORPHAN_RECAP: "Recap match",
+    CHECK_EVENT_DATE: "Event date", APPEAL_OPEN: "Appeal", STRIKE_BASIS_MISSING: "Strike", BILL_PDF_UNMATCHED: "Bill details",
+    BILL_DETAILS_UNKNOWN_ID: "Bill details"};
+  const rows = D.review.map(r => ({group: KIND[r.kind] || "Other", what: r.detail, action: r.action}));
+  const notes = [
+    ...D.flags.map(r => ({label: r.severity === "high" ? "Flag (high)" : "Flag", what: r.message, sub: [r.rule_id, r.rso].filter(Boolean).join(", ")})),
+    ...D.quality.map(r => ({label: "Data", what: r.message, sub: `row ${r.row} of ${r.upload}`})),
+  ];
+  const fyi = notes.length ? el("details", {class: "panel", style: "margin-top:16px"},
+    el("summary", {class: "small muted", style: "cursor:pointer"}, `Flags and data notes (${notes.length}). For information; no decision needed.`),
+    el("ul", {class: "list small", style: "margin-top:8px"}, notes.map(n => el("li", {},
+      el("span", {}, n.what, n.sub ? el("span", {class: "t"}, n.sub) : ""), el("span", {class: "pill p-plain"}, n.label))))) : "";
+  const table = tableView({
+    tab: "review", title: "To review", eyebrow: `${D.meta.fy} · Judgment calls`, noun: "item", placeholder: "Search",
+    intro: "Decisions the engine won't make on its own. Expand an item for the command that records the decision.",
+    search: ["what", "group"], sort: null, emptyText: "Nothing to review.",
+    facets: [{key: "group", label: "Type", order: ["Appeal", "Strike", "Recap match", "Event date", "RSO name", "Bill details", "Other"]}],
+    columns: [
+      {k: "group", label: "Type", fmt: r => el("span", {class: "pill p-amber"}, r.group)},
+      {k: "what", label: "What", fmt: r => el("span", {class: "t", style: "white-space:normal;max-width:none;color:inherit;font-size:14px"}, r.what)},
+    ],
+    details: [["what", "Detail"],
+      ["action", "Fix with", r => blank(r.action) ? "" : el("div", {}, r.action.split("  |  ").map(command))]],
+  }, rows);
+  table.append(fyi);
+  return table;
+}
+
+// ---------- guide (the info page)
+function guide() {
+  const g = (term, text) => [el("div", {}, pill(term)), el("div", {}, text)];
+  const box = (title, ...kids) => el("div", {class: "panel"}, el("h3", {}, title), ...kids);
+  return el("section", {class: "guide"},
+    sechead(`${D.meta.fy} · Reference`, "How to use this page",
+      `The ${D.meta.fy} recap compliance picture under SAF Policy §9.5 (data as of ${D.meta.as_of}). Every table can be searched, filtered and sorted. Click a row for details.`),
+    box("Each day", el("ol", {},
+      el("li", {}, "Check on the ", el("a", {href: "#tab=overview"}, "Overview"), " that the data is from today. Recap data more than a day old blocks the run."),
+      el("li", {}, "Work through ", el("a", {href: "#tab=review"}, "To review"), ": each item shows the command that records the decision."),
+      el("li", {}, "Send proposed strikes to a confirmer using the Strike Confirmation sheet in the Excel report."),
+      el("li", {}, "Admins decide ", el("a", {href: "#tab=appeals&status=OPEN"}, "open appeals"), "."),
+      el("li", {}, "The Chair reviews the report, then the notice emails go out and are marked sent."))),
+    box("What the statuses mean", el("div", {class: "gloss"},
+      g("DUE", "Event is over; the recap is due within 14 days of the event's last day."),
+      g("OVERDUE", "No recap and the 14 days have passed."),
+      g("LATE", "Recap filed, but after the deadline."),
+      g("INCOMPLETE", "Recap is missing a required item. A judgment call."),
+      g("NEEDS_REVIEW", "The engine isn't sure (match, date). It never strikes on a guess."),
+      g("NO_EVENT_DATE", "No event date yet, so nothing can be checked."),
+      g("COMPLIANT", "Recap filed on time and complete."))),
+    box("Strikes and appeals", el("ul", {},
+      el("li", {}, "The engine only proposes strikes. A strike counts once a confirmer signs off."),
+      el("li", {}, "Strike 1: written warning. Strike 2: account frozen until the recap is filed + 30 days. Strike 3: frozen for the rest of the year."),
+      el("li", {}, "Strikes count in the fiscal year of the event and reset July 1."),
+      el("li", {}, "An RSO can appeal within 30 days of the strike email. An admin grants (strike removed) or denies it; the strike stays in force meanwhile."))),
+    box("Privacy", el("p", {style: "margin:0"}, "This page contains student names and emails. Keep it in the JFDC folder and don't share it outside the committee.")),
+    el("p", {class: "muted small"}, `Generated ${D.meta.generated}.`));
+}
+
+// ---------- shell
+function render() {
+  const {tab} = readHash();
+  const cur = TABS.find(t => t.id === tab) || TABS[0];
+  const entering = cur.id !== ui.lastTab;
+  if (entering) ui.open = null;
+  const fk = document.activeElement?.dataset?.fk;
+  const nav = document.getElementById("tabs");
+  nav.replaceChildren(...TABS.map(t => el("button", {role: "tab", type: "button", "aria-selected": String(t === cur),
+    onclick: () => go(t.id)}, t.label, t.badge ? el("span", {class: "n"}, t.badge) : "")));
+  const main = document.getElementById("main");
+  main.classList.remove("enter");
+  main.replaceChildren(D.meta.draft ? el("div", {class: "banner"}, D.meta.draft) : "", cur.view());
+  if (entering) { void main.offsetWidth; main.classList.add("enter"); nav.querySelector("[aria-selected=true]")?.scrollIntoView({block: "nearest", inline: "nearest"}); }
+  ui.lastTab = cur.id;
+  if (fk && !entering) {
+    const e = [...document.querySelectorAll("[data-fk]")].find(x => x.dataset.fk === fk);
+    if (e) { e.focus({preventScroll: true}); if (e.type === "search") e.setSelectionRange(e.value.length, e.value.length); }
+  }
+  document.title = `${cur.label}: JFDC Compliance`;
+}
+const sub = document.getElementById("sub");
+sub.append("Recap compliance · ", el("b", {}, D.meta.fy), el("br"), `Data as of ${D.meta.as_of}`);
+addEventListener("hashchange", render);
+render();
+</script>
+</body>
+</html>
