@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -71,7 +72,7 @@ def cmd_status(args):
         return
     df = pd.DataFrame([u.__dict__ for u in ups])[["upload_id", "source", "as_of", "newest_record", "rows_ok",
                                                    "rows_quarantined", "uploaded_by", "original_name"]]
-    print(df.to_string(index=False))
+    print(df.fillna("").to_string(index=False))
 
 
 def cmd_run(args):
@@ -84,7 +85,8 @@ def cmd_run(args):
         print(f"BLOCKED: {e}", file=sys.stderr)
         return 2
     out = write_run(res, ws.runs_dir)
-    queue = build_queue(res, ws.notices_sent(), cfg.policy["recap"]["due_soon_days"], cfg.policy.get("appeals"))
+    queue = build_queue(res, ws.notices_sent(), cfg.policy["recap"]["due_soon_days"], cfg.policy.get("appeals"),
+                        cfg.policy.get("notices", {}).get("allowed_domains", ["gatech.edu"]))
     write_notices(queue, out)
     req = res.requirements
     print(f"Run {out.name}  as of {res.as_of:%Y-%m-%d %H:%M}  FY{res.fy}  {res.watermark}")
@@ -97,6 +99,7 @@ def cmd_run(args):
     for w in res.warnings:
         print(f"warning: {w}")
     print(f"Report: {out}")
+    print(f"Dashboard: {out / 'dashboard.html'}  (open with `jfdc dashboard`)")
 
 
 def cmd_decide(args):
@@ -115,6 +118,12 @@ def cmd_import_confirmations(args):
     """Read the filled-in 'Strike Confirmation' sheet Walker/JFC returned."""
     ws = _ws(args)
     cfg = load_config(ws.root)
+    from .workspace import sha256_file
+    sha = sha256_file(Path(args.workbook))
+    if any(d.get("source_sha") == sha for d in ws.decisions()):
+        print(f"{Path(args.workbook).name} was already imported; nothing recorded. (Edit the sheet and save it "
+              "again if you meant to change a decision.)", file=sys.stderr)
+        return 1
     df = pd.read_excel(args.workbook, sheet_name="Strike Confirmation", dtype=str).fillna("")
     action_col = next(c for c in df.columns if c.startswith("Action"))
     by_col = next(c for c in df.columns if c.startswith("Confirmed by"))
@@ -133,7 +142,7 @@ def cmd_import_confirmations(args):
             # bill later drops out of the Engage export (BASIS_MISSING).
             snap = {k: r[k] for k in ("rso", "title", "event_date", "due_date") if r.get(k)}
             record_decision(ws, cfg, kinds[act], args.actor, r.get("Reason", ""), bill_id=r["bill_id"],
-                            confirmed_by=r[by_col], source=Path(args.workbook).name, **snap)
+                            confirmed_by=r[by_col], source=Path(args.workbook).name, source_sha=sha, **snap)
             n += 1
         except (PermissionDenied, ValueError) as err:
             print(f"Bill {r['bill_id']}: DENIED {err}", file=sys.stderr)
@@ -145,16 +154,52 @@ def cmd_import_confirmations(args):
 def cmd_mark_sent(args):
     ws = _ws(args)
     run = ws.runs_dir / args.run_id
-    q = pd.read_csv(run / "notices.csv", dtype=str)
+    if not re.fullmatch(r"\d{8}-\d{6}", args.run_id) or not (run / "notices.csv").exists():
+        print(f"No run {args.run_id!r} with notices in {ws.runs_dir}", file=sys.stderr)
+        return 1
+    q = pd.read_csv(run / "notices.csv", dtype=str, keep_default_na=False)
+    held = q[q["hold_reason"] != ""] if "hold_reason" in q else q.iloc[0:0]
+    if len(held):
+        print(f"Not marking {len(held)} held notice(s) (bad or missing address): fix and re-run.", file=sys.stderr)
+        q = q[q["hold_reason"] == ""]
     if args.only:
         q = q[q["bill_id"].isin(args.only)]
     for n in q.to_dict("records"):
         ordinal = n.get("ordinal")
         ws.mark_notice_sent({"bill_id": n["bill_id"], "notice": n["notice"], "to": n["to"], "run_id": args.run_id,
-                             "ordinal": ordinal if isinstance(ordinal, str) else "",
-                             "ref": n["ref"] if isinstance(n.get("ref"), str) else "",
+                             "ordinal": ordinal or "", "ref": n.get("ref") or "",
                              "sent_by": args.actor, "sent_at": datetime.now().isoformat(timespec="seconds")})
     print(f"Marked {len(q)} notices sent.")
+
+
+def _latest_dashboard(ws: Workspace, run_id: str | None) -> Path | None:
+    runs = sorted(p for p in ws.runs_dir.glob("*/dashboard.html")) if ws.runs_dir.exists() else []
+    if run_id:
+        runs = [p for p in runs if p.parent.name == run_id]
+    return runs[-1] if runs else None
+
+
+def cmd_dashboard(args):
+    ws = _ws(args)
+    ws.require_initialized()
+    path = _latest_dashboard(ws, args.run_id)
+    if not path:
+        print("No dashboard yet. Run `jfdc run` first.", file=sys.stderr)
+        return 1
+    print(path)
+    if not args.no_open:
+        import webbrowser
+        webbrowser.open(path.resolve().as_uri())
+
+
+def cmd_demo(args):
+    from .demo import build_demo
+    out = build_demo(Path(args.out))
+    print(f"Demo workspace (fictional data) in {Path(args.out).resolve()}")
+    print(f"Dashboard: {out / 'dashboard.html'}")
+    if not args.no_open:
+        import webbrowser
+        webbrowser.open((out / "dashboard.html").resolve().as_uri())
 
 
 def main(argv=None):
@@ -195,6 +240,16 @@ def main(argv=None):
     s.add_argument("--actor", required=True)
     s.add_argument("--only", nargs="*", help="only these bill IDs")
     s.set_defaults(fn=cmd_mark_sent)
+
+    s = sub.add_parser("dashboard", help="open the latest run's dashboard in a browser")
+    s.add_argument("run_id", nargs="?", help="a specific run (default: latest)")
+    s.add_argument("--no-open", action="store_true", help="only print the path")
+    s.set_defaults(fn=cmd_dashboard)
+
+    s = sub.add_parser("demo", help="build a workspace from fictional data and open its dashboard")
+    s.add_argument("--out", default="jfdc-demo", help="new folder to create (default: ./jfdc-demo)")
+    s.add_argument("--no-open", action="store_true")
+    s.set_defaults(fn=cmd_demo)
 
     args = p.parse_args(argv)
     try:

@@ -14,7 +14,7 @@ drafts the emails.
 | Outcome | **Granted:** strike removed, standing recalculated, later strikes renumbered (with correction emails). **Denied:** strike stands. Both need a reason. | |
 
 ## Flow
-1. The strike email (`templates/notices/STRIKE_n.txt`) includes **HOW TO APPEAL**, the deadline, and the
+1. The strike email (`templates/notices/STRIKE_n.txt`) includes a **How to appeal** section, the deadline, and the
    form link (`policy.yaml: appeals.form_url`). Until the form exists, the email tells the student to reply.
 2. The student fills in the **Strike Appeal Form** (below).
 3. Download its responses (Forms → Open in Excel) and ingest them with the other files:

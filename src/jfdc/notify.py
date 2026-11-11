@@ -8,6 +8,7 @@ Next cycle: the email bot sends the same queue. Each (bill, notice, ref) goes ou
 from __future__ import annotations
 
 import csv
+import re
 from email.message import EmailMessage
 from pathlib import Path
 
@@ -35,6 +36,22 @@ NO_FORM_YET = ("reply to this email with your RSO, the bill number, why you beli
                "and any proof (the online Appeal Form is coming soon)")
 
 
+_ADDRESS = re.compile(r"^[A-Za-z0-9._%+-]+@([A-Za-z0-9-]+\.)+[A-Za-z]{2,}$")
+
+
+def recipient_problem(addr: str, allowed_domains: list[str]) -> str:
+    """'' if `addr` is ONE plain address on an allowed domain; otherwise why it is held.
+    Student-typed text ("a@gatech.edu, everyone@gatech.edu") must never become a recipient list."""
+    a = (addr or "").strip()
+    if not a:
+        return "no email address"
+    if not _ADDRESS.match(a):
+        return f"not a single plain email address: {a!r}"
+    if allowed_domains and a.lower().rsplit("@", 1)[1] not in {d.lower() for d in allowed_domains}:
+        return f"{a} is not on an allowed domain ({', '.join(allowed_domains)})"
+    return ""
+
+
 def appeal_context(appeals_cfg: dict | None, today) -> dict:
     """Fields every strike email uses to explain how to appeal."""
     from datetime import timedelta
@@ -49,7 +66,8 @@ def appeal_context(appeals_cfg: dict | None, today) -> dict:
 
 
 def build_queue(res: RunResult, already_sent: list[dict], due_soon_days: int,
-                appeals_cfg: dict | None = None) -> pd.DataFrame:
+                appeals_cfg: dict | None = None, allowed_domains: list[str] | None = None) -> pd.DataFrame:
+    allowed = ["gatech.edu"] if allowed_domains is None else allowed_domains
     # Send-once key: (bill, notice, ref). `ref` is the appeal id for appeal emails, blank otherwise.
     sent = {(n["bill_id"], n["notice"], n.get("ref") or "") for n in already_sent}
     appeal_ctx = appeal_context(appeals_cfg, res.as_of.date())
@@ -98,17 +116,20 @@ def build_queue(res: RunResult, already_sent: list[dict], due_soon_days: int,
         ref = r.get("_ref", "")
         if kind != "STRIKE_RENUMBERED" and (r["bill_id"], kind, ref) in sent:
             continue
-        if not r.get("submitter_email"):
-            continue
+        to = str(r.get("submitter_email") or "").strip()
+        if not to and kind not in APPEAL_NOTICES.values():
+            continue  # no submitter on file (e.g. old bills): nothing to send, as before
+        hold = recipient_problem(to, allowed)
         ctx = _Blank({k: ("" if v is None or (isinstance(v, float) and pd.isna(v)) else v) for k, v in r.items()})
         body = (TEMPLATES / f"{kind}.txt").read_text().format_map(ctx)
-        rows.append({"notice": kind, "bill_id": r["bill_id"], "rso": r["rso"], "to": r["submitter_email"],
+        rows.append({"notice": kind, "bill_id": r["bill_id"], "rso": r["rso"], "to": "" if hold else to,
+                     "hold_reason": hold,
                      "to_name": ctx["submitter_name"], "ordinal": ctx["ordinal"], "ref": ref,
                      "subject": SUBJECTS[kind].format_map(ctx), "body": body})
     return pd.DataFrame(rows, columns=QUEUE_COLUMNS)
 
 
-QUEUE_COLUMNS = ["notice", "bill_id", "rso", "to", "to_name", "ordinal", "ref", "subject", "body"]
+QUEUE_COLUMNS = ["notice", "bill_id", "rso", "to", "hold_reason", "to_name", "ordinal", "ref", "subject", "body"]
 
 
 class _Blank(dict):
@@ -131,10 +152,14 @@ def last_strike_number_sent(already_sent: list[dict]) -> dict[str, int]:
 
 
 def write_notices(queue: pd.DataFrame, out_dir: Path, sender: str = "") -> None:
-    queue.to_csv(out_dir / "notices.csv", index=False, quoting=csv.QUOTE_ALL)
+    from .report import csv_safe  # local import: report imports pipeline, notify is imported by cli only
+    csv_safe(queue, keep=("notice", "bill_id", "ref", "ordinal", "to")).to_csv(
+        out_dir / "notices.csv", index=False, quoting=csv.QUOTE_ALL)
     eml = out_dir / "eml"
     eml.mkdir(exist_ok=True)
     for i, n in enumerate(queue.to_dict("records"), start=1):
+        if n.get("hold_reason"):
+            continue  # listed in notices.csv with the reason; a person fixes the address first
         m = EmailMessage()
         m["To"] = n["to"]
         if sender:

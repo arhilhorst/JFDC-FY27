@@ -10,6 +10,7 @@ import pandas as pd
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
+from .dashboard import write_dashboard
 from .pipeline import RunResult
 
 FILL = {
@@ -17,6 +18,20 @@ FILL = {
     "NEEDS_REVIEW": "FFF2CC", "DUE": "DDEBF7", "COMPLIANT": "E2EFDA", "NO_EVENT_DATE": "EDEDED",
     "OPEN": "FFF2CC", "GRANTED": "E2EFDA", "DENIED": "EDEDED",
 }
+
+
+FORMULA_START = ("=", "+", "-", "@", "\t", "\r")
+
+
+def csv_safe(df: pd.DataFrame, keep: tuple[str, ...] = ()) -> pd.DataFrame:
+    """Neutralize spreadsheet formulas in text cells (OWASP "CSV injection"): a recap or appeal field that
+    starts with = + - @ would otherwise run as a formula when the CSV is opened in Excel."""
+    out = df.copy()
+    for c in out.columns:
+        if c in keep or pd.api.types.is_numeric_dtype(out[c]) or pd.api.types.is_datetime64_any_dtype(out[c]):
+            continue  # (pandas 3 stores text as "str", not object, so test for what ISN'T text)
+        out[c] = out[c].map(lambda v: "'" + v if isinstance(v, str) and v.startswith(FORMULA_START) else v)
+    return out
 
 
 def _money(c):
@@ -123,6 +138,10 @@ def write_workbook(sheets: dict[str, pd.DataFrame], path: Path) -> None:
                 cell.fill = PatternFill("solid", fgColor="D9D9D9")
                 cell.alignment = Alignment(wrap_text=True, vertical="top")
             ws.freeze_panes = "A2"
+            for row in ws.iter_rows(min_row=2):
+                for cell in row:
+                    if cell.data_type == "f":  # text like "=HYPERLINK(...)" typed into a form: keep it as text
+                        cell.data_type = "s"
             for i, col in enumerate(df.columns, start=1):
                 width = max([len(str(col))] + [len(str(v)) for v in df[col].head(200)]) if len(df) else len(str(col))
                 ws.column_dimensions[get_column_letter(i)].width = min(max(10, width + 2), 60)
@@ -141,9 +160,9 @@ def write_run(res: RunResult, runs_dir: Path) -> Path:
     out.mkdir(parents=True, exist_ok=True)
     sheets = build_sheets(res, _previous_requirements(runs_dir, run_id))
     write_workbook(sheets, out / f"JFDC_Compliance_Report_{res.as_of:%Y-%m-%d}{'_DRAFT' if res.watermark else ''}.xlsx")
-    res.requirements.to_csv(out / "requirements.csv", index=False)
-    res.strikes.to_csv(out / "strikes.csv", index=False)
-    res.appeals.to_csv(out / "appeals.csv", index=False)
+    for name, df in (("requirements", res.requirements), ("strikes", res.strikes), ("appeals", res.appeals)):
+        csv_safe(df).to_csv(out / f"{name}.csv", index=False)
+    write_dashboard(res, out)
     (out / "run.json").write_text(json.dumps({
         "run_id": run_id, "as_of": res.as_of.isoformat(), "fy": res.fy, "watermark": res.watermark,
         "inputs": [{"upload_id": u.upload_id, "sha256": u.sha256, "as_of": u.as_of} for u in res.inputs],

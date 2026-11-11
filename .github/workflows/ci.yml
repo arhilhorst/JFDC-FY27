@@ -13,5 +13,5 @@ jobs:
       - run: python -m pytest -q
       - name: No real data committed
         run: |
-          if git ls-files | grep -E '\.(csv|xlsx|xls|pdf)$' | grep -v '^tests/fixtures/'; then
+          if git ls-files | grep -E '\.(csv|xlsx|xls|pdf|eml|jsonl)$' | grep -v '^tests/fixtures/'; then
             echo "Data files must not be committed (student PII)"; exit 1; fi

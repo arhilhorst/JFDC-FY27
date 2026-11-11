@@ -59,3 +59,8 @@ appeals:
   # Chair decision: an open appeal does NOT pause the strike's consequence (the engine never pauses).
   # PENDING (PC-8): paste the Appeal Form link here when it exists. Until then strike emails say to reply instead.
   form_url: ""
+
+notices:
+  # Only these domains can receive a notice. Anything else (or anything that isn't ONE plain address,
+  # e.g. "a@gatech.edu, b@gatech.edu" typed into a form) is held in notices.csv with a reason.
+  allowed_domains: ["gatech.edu"]

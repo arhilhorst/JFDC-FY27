@@ -13,7 +13,7 @@ Consequence: {consequence}.
 
 If you have not yet submitted the Post-Event Recap Form, please do so now.
 
-HOW TO APPEAL
+How to appeal:
 If you believe this strike was given by mistake (for example, the recap was submitted on time,
 the event was cancelled or the funds were not used, the bill covered the same event as another
 bill, or the event date is wrong), you may appeal within {appeal_window_days} days of this email

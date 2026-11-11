@@ -33,7 +33,7 @@ def _confirmed_strike(world, bid="100600"):
 def test_strike_email_explains_how_to_appeal(world):
     q = _confirmed_strike(world)
     body = q.set_index("notice").at["STRIKE_1", "body"]
-    assert "HOW TO APPEAL" in body and "within 30 days" in body and "(by 2026-10-20)" in body
+    assert "How to appeal:" in body and "within 30 days" in body and "(by 2026-10-20)" in body
     assert "Appeal Form is coming soon" in body  # no form_url yet
     world.bills.clear()
     res = rerun(world, datetime(2026, 9, 20))
@@ -54,7 +54,7 @@ def test_open_appeal_is_matched_listed_and_acknowledged(world):
     assert res.standing.iloc[0]["standing"].startswith("STRIKE 1")
     q = build_queue(res, world.ws.notices_sent(), 3, POLICY_APPEALS)
     ack = q[q["notice"] == "APPEAL_RECEIVED"].iloc[0]
-    assert ack["to"] == "pat@gatech.edu" and ack["ref"] == "7"
+    assert ack["to"] == "appellant@gatech.edu" and ack["ref"] == "7"  # the GT account Forms recorded wins
 
 
 def test_only_admin_decides_and_reason_is_required(world):
@@ -112,3 +112,41 @@ def test_grant_without_confirmed_strike_changes_nothing(world):
     res = rerun(world, datetime(2026, 9, 22))
     assert res.strikes.iloc[0]["state"] == "proposed"
     assert "no confirmed strike to remove" in res.appeals.iloc[0]["checks"]
+
+
+# Security: student-entered text must not become recipients, formulas or markup
+def test_typed_recipient_list_is_held_not_sent(world):
+    from jfdc.notify import recipient_problem
+    assert recipient_problem("pat@gatech.edu", ["gatech.edu"]) == ""
+    assert "single plain" in recipient_problem("a@gatech.edu, everyone@gatech.edu", ["gatech.edu"])
+    assert "allowed domain" in recipient_problem("pat@gmail.com", ["gatech.edu"])
+    world.bill(100620, event_date=date(2026, 8, 20), email="a@gatech.edu, all@gatech.edu")
+    world.write_and_run(datetime(2026, 9, 20))
+    record_decision(world.ws, world.cfg, "strike_confirm", REVIEWER, bill_id="100620", confirmed_by=CONFIRMER)
+    q = build_queue(rerun(world, datetime(2026, 9, 20)), [], 3, POLICY_APPEALS)
+    n = q[q["notice"] == "STRIKE_1"].iloc[0]
+    assert n["to"] == "" and "single plain" in n["hold_reason"]
+
+
+def test_formulas_typed_into_forms_stay_text(world, tmp_path):
+    import openpyxl
+    import pandas as pd
+
+    from jfdc.report import write_run
+    world.bill(100630, event_date=date(2026, 8, 20), title='=HYPERLINK("http://evil","x")')
+    res = world.write_and_run(datetime(2026, 9, 20))
+    out = write_run(res, tmp_path / "runs")
+    wb = openpyxl.load_workbook(next(out.glob("*.xlsx")))
+    cells = [c for ws in wb for row in ws.iter_rows() for c in row if str(c.value).startswith("=HYPERLINK")]
+    assert cells and all(c.data_type == "s" for c in cells)
+    csv = pd.read_csv(out / "requirements.csv", dtype=str)
+    assert csv.loc[0, "title"].startswith("'=")
+
+
+def test_dashboard_escapes_student_text(world, tmp_path):
+    from jfdc.dashboard import build_payload, render
+    world.bill(100640, event_date=date(2026, 8, 20), title="</script><script>alert(1)</script>")
+    res = world.write_and_run(datetime(2026, 9, 20))
+    html = render(build_payload(res))
+    assert "<script>alert(1)" not in html and "\\u003c/script\\u003e" in html
+    assert "http://" not in html.split("<script id=")[0]  # no external resources in the page head

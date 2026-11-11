@@ -4,6 +4,11 @@ data/
 *.xlsx
 *.xls
 *.pdf
+*.eml
+*.jsonl
+runs/
+dashboard.html
+jfdc-demo*/
 !tests/fixtures/**
 __pycache__/
 *.egg-info/

@@ -32,8 +32,9 @@ def parse_appeals(df: pd.DataFrame, spec: dict) -> tuple[pd.DataFrame, list[dict
     for c in ("evidence", "form_email", "form_name"):
         if c not in a:
             a[c] = ""
-    # Prefer what the student typed; fall back to the GT account Forms recorded.
-    a["appellant_email"] = a["appellant_email"].where(a["appellant_email"].str.strip() != "", a["form_email"])
+    # Reply to the GT account Forms recorded (authenticated) when there is one; the typed address is only a
+    # fallback, and notify.py still checks it is a single allowed address before anything is sent.
+    a["appellant_email"] = a["form_email"].where(a["form_email"].astype(str).str.strip() != "", a["appellant_email"])
     a["appellant_name"] = a["appellant_name"].where(a["appellant_name"].str.strip() != "", a["form_name"])
     a["appellant_email"] = a["appellant_email"].str.strip().str.lower()
 
